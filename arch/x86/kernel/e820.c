@@ -878,6 +878,9 @@ static int __init parse_memmap_one(char *p)
 	} else if (*p == '!') {
 		start_at = memparse(p+1, &p);
 		e820_add_region(start_at, mem_size, E820_PRAM);
+	} else if (*p == '%') {
+		start_at = memparse(p+1, &p);
+		e820_add_region(start_at, mem_size, E820_PMEMONLY);
 	} else
 		e820_remove_range(mem_size, ULLONG_MAX - mem_size, E820_RAM, 1);
 

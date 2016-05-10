@@ -213,7 +213,6 @@ static char * const zone_names[MAX_NR_ZONES] = {
 #ifdef CONFIG_ZONE_DMA32
 	 "DMA32",
 #endif
-	 "PMONLY",
 	 "Normal",
 #ifdef CONFIG_HIGHMEM
 	 "HighMem",
@@ -222,6 +221,7 @@ static char * const zone_names[MAX_NR_ZONES] = {
 #ifdef CONFIG_ZONE_DEVICE
 	 "Device",
 #endif
+	 "PMONLY",
 };
 
 compound_page_dtor * const compound_page_dtors[] = {

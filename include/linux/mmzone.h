@@ -302,6 +302,7 @@ enum zone_type {
 	 * transfers to all addressable memory.
 	 */
 	ZONE_NORMAL,
+	ZONE_PMONLY,
 #ifdef CONFIG_HIGHMEM
 	/*
 	 * A memory area that is only addressable by the kernel through

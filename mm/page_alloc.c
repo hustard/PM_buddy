@@ -214,6 +214,7 @@ static char * const zone_names[MAX_NR_ZONES] = {
 	 "DMA32",
 #endif
 	 "Normal",
+	 "PMONLY",
 #ifdef CONFIG_HIGHMEM
 	 "HighMem",
 #endif

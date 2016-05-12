@@ -5727,12 +5727,22 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
 	arch_zone_lowest_possible_pfn[0] = find_min_pfn_with_active_regions();
 	arch_zone_highest_possible_pfn[0] = max_zone_pfn[0];
 	for (i = 1; i < MAX_NR_ZONES; i++) {
-		if (i == ZONE_MOVABLE)
+		if (i == ZONE_MOVABLE){
+			printk("free_area_init_nodes_continue %d\n",i);
 			continue;
-		arch_zone_lowest_possible_pfn[i] =
-			arch_zone_highest_possible_pfn[i-1];
-		arch_zone_highest_possible_pfn[i] =
-			max(max_zone_pfn[i], arch_zone_lowest_possible_pfn[i]);
+		}
+		printk("free_area_init_nodes %d\n",i);
+		if (i == ZONE_PMONLY){
+			arch_zone_lowest_possible_pfn[i] =
+				arch_zone_highest_possible_pfn[i-2];
+			arch_zone_highest_possible_pfn[i] =
+				max(max_zone_pfn[i], arch_zone_lowest_possible_pfn[i]);
+		} else {
+			arch_zone_lowest_possible_pfn[i] =
+				arch_zone_highest_possible_pfn[i-1];
+			arch_zone_highest_possible_pfn[i] =
+				max(max_zone_pfn[i], arch_zone_lowest_possible_pfn[i]);
+		}
 	}
 	arch_zone_lowest_possible_pfn[ZONE_MOVABLE] = 0;
 	arch_zone_highest_possible_pfn[ZONE_MOVABLE] = 0;

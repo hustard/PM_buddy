@@ -727,6 +727,7 @@ void __init zone_sizes_init(void)
 #endif
 	max_zone_pfns[ZONE_NORMAL]	= min(MAX_NORMAL_PFN, max_low_pfn);
 	max_zone_pfns[ZONE_PMONLY]	= max_low_pfn;
+//	max_zone_pfns[ZONE_NORMAL]	= max_low_pfn;
 #ifdef CONFIG_HIGHMEM
 	max_zone_pfns[ZONE_HIGHMEM]	= max_pfn;
 #endif

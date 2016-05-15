@@ -1052,6 +1052,8 @@ static void __init __free_pages_boot_core(struct page *page,
 	unsigned int loop;
 
 	prefetchw(p);
+	//hustard
+//	printk("nr_pages %u in __free_pages_boot_core\n");
 	for (loop = 0; loop < (nr_pages - 1); loop++, p++) {
 		prefetchw(p + 1);
 		__ClearPageReserved(p);
@@ -1200,6 +1202,7 @@ static int __init deferred_init_memmap(void *data)
 
 		end_pfn = min(walk_end, zone_end_pfn(zone));
 		pfn = first_init_pfn;
+
 		if (pfn < walk_start)
 			pfn = walk_start;
 		if (pfn < zone->zone_start_pfn)
@@ -1946,6 +1949,8 @@ static void drain_pages(unsigned int cpu)
 	struct zone *zone;
 
 	for_each_populated_zone(zone) {
+		//hustard
+		printk("drain_pages\n");
 		drain_pages_zone(cpu, zone);
 	}
 }
@@ -4138,6 +4143,8 @@ static void build_zonelists_in_zone_order(pg_data_t *pgdat, int nr_nodes)
 	zonelist = &pgdat->node_zonelists[0];
 	pos = 0;
 	for (zone_type = MAX_NR_ZONES - 1; zone_type >= 0; zone_type--) {
+		//hustard
+		printk(KERN_WARNING "zone_type in build_zonelists_in_zone_order %d\n", zone_type);
 		for (j = 0; j < nr_nodes; j++) {
 			node = node_order[j];
 			z = &NODE_DATA(node)->node_zones[zone_type];
@@ -4556,6 +4563,7 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 
 			__init_single_page(page, pfn, zone, nid);
 			set_pageblock_migratetype(page, MIGRATE_MOVABLE);
+			//hustard
 		} else {
 			__init_single_pfn(pfn, zone, nid);
 		}
@@ -5286,6 +5294,12 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat)
 		 * And all highmem pages will be managed by the buddy system.
 		 */
 		zone->managed_pages = is_highmem_idx(j) ? realsize : freesize;
+
+		//hustard
+		printk(KERN_WARNING
+					"  %s zone: %lu pages managed_pages \n",
+					zone_names[j], zone->managed_pages);
+
 #ifdef CONFIG_NUMA
 		zone->node = nid;
 		zone->min_unmapped_pages = (freesize*sysctl_min_unmapped_ratio)
@@ -5728,10 +5742,10 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
 	arch_zone_highest_possible_pfn[0] = max_zone_pfn[0];
 	for (i = 1; i < MAX_NR_ZONES; i++) {
 		if (i == ZONE_MOVABLE){
-			printk("free_area_init_nodes_continue %d\n",i);
+			printk("free_area_init_nodes_continuee %d\n",i);
 			continue;
 		}
-		printk("free_area_init_nodes %d\n",i);
+		printk("free_area_init_nodess %d\n",i);
 		if (i == ZONE_PMONLY){
 			arch_zone_lowest_possible_pfn[i] =
 				arch_zone_highest_possible_pfn[i-2];

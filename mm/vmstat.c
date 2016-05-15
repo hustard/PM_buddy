@@ -913,8 +913,12 @@ static void walk_zones_in_node(struct seq_file *m, pg_data_t *pgdat,
 	unsigned long flags;
 
 	for (zone = node_zones; zone - node_zones < MAX_NR_ZONES; ++zone) {
-		if (!populated_zone(zone))
+		if (!populated_zone(zone)){
+			printk("!populated_zone\n");
 			continue;
+		}
+		//hustard
+		printk("zone - node_zones value %d < MAX_NR_ZONES %d\n", zone-node_zones, MAX_NR_ZONES);
 
 		spin_lock_irqsave(&zone->lock, flags);
 		print(m, pgdat, zone);

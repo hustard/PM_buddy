@@ -627,6 +627,7 @@ void do_set_pte(struct vm_area_struct *vma, unsigned long address,
 #define NODES_PGOFF		(SECTIONS_PGOFF - NODES_WIDTH)
 #define ZONES_PGOFF		(NODES_PGOFF - ZONES_WIDTH)
 #define LAST_CPUPID_PGOFF	(ZONES_PGOFF - LAST_CPUPID_WIDTH)
+//hustard | section:58 | node:58 | ZONE:56 | CPUPID:56 | .... | flags:22? | 
 
 /*
  * Define the bit shifts to access each section.  For non-existent

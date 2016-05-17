@@ -918,7 +918,7 @@ static void walk_zones_in_node(struct seq_file *m, pg_data_t *pgdat,
 			continue;
 		}
 		//hustard
-		printk("zone - node_zones value %d < MAX_NR_ZONES %d\n", zone-node_zones, MAX_NR_ZONES);
+//		printk("zone - node_zones value %d < MAX_NR_ZONES %d\n", zone-node_zones, MAX_NR_ZONES);
 
 		spin_lock_irqsave(&zone->lock, flags);
 		print(m, pgdat, zone);
@@ -950,6 +950,19 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 	for (order = 0; order < MAX_ORDER; ++order)
 		seq_printf(m, "%6lu ", zone->free_area[order].nr_free);
 	seq_putc(m, '\n');
+
+	printk("section width %d, shift %d\nnode width %d, shift %d\nzone width %d, shift %d\nlast_cpuid width %d, shift %d\n",
+			SECTIONS_WIDTH, SECTIONS_SHIFT,
+			NODES_WIDTH, NODES_SHIFT,
+			ZONES_WIDTH, ZONES_SHIFT,
+			LAST_CPUPID_WIDTH, LAST_CPUPID_SHIFT);
+	printk("section_SIZE_BITS %d, max_phyaddr_BITS %d max_phymem_bits %d\n",
+			SECTION_SIZE_BITS, MAX_PHYSADDR_BITS, MAX_PHYSMEM_BITS);
+	printk("section_pgoff %d, section_pgshift %d nodes_pgoff %d nodes_pgshift %d\n",
+			SECTIONS_PGOFF, SECTIONS_PGSHIFT, NODES_PGOFF, NODES_PGSHIFT);
+	printk("zones_pgoff %d, zones_pgshift %d lastcpuid_pgoff %d pastcpuid_pgshift %d\n",
+			ZONES_PGOFF, ZONES_PGSHIFT, LAST_CPUPID_PGOFF, LAST_CPUPID_PGSHIFT);
+
 }
 
 /*

@@ -38,6 +38,35 @@ struct vm_area_struct;
 #define ___GFP_KSWAPD_RECLAIM	0x2000000u
 /* If the above are modified, __GFP_BITS_SHIFT may need updating */
 
+//hustard
+//#define ___GFP_DMA		0x01u
+//#define ___GFP_HIGHMEM		0x02u
+//#define ___GFP_DMA32		0x04u
+//#define ___GFP_PMONLY		0x08u
+//#define ___GFP_MOVABLE		0x10u
+//#define ___GFP_RECLAIMABLE	0x20u
+//#define ___GFP_HIGH		0x40u
+//#define ___GFP_IO		0x80u
+//#define ___GFP_FS		0x100u
+//#define ___GFP_COLD		0x200u
+//#define ___GFP_NOWARN		0x400u
+//#define ___GFP_REPEAT		0x800u
+//#define ___GFP_NOFAIL		0x1000u
+//#define ___GFP_NORETRY		0x2000u
+//#define ___GFP_MEMALLOC		0x4000u
+//#define ___GFP_COMP		0x8000u
+//#define ___GFP_ZERO		0x10000u
+//#define ___GFP_NOMEMALLOC	0x20000u
+//#define ___GFP_HARDWALL		0x40000u
+//#define ___GFP_THISNODE		0x80000u
+//#define ___GFP_ATOMIC		0x100000u
+//#define ___GFP_ACCOUNT		0x200000u
+//#define ___GFP_NOTRACK		0x400000u
+//#define ___GFP_DIRECT_RECLAIM	0x800000u
+//#define ___GFP_OTHER_NODE	0x1000000u
+//#define ___GFP_WRITE		0x2000000u
+//#define ___GFP_KSWAPD_RECLAIM	0x4000000u
+
 /*
  * Physical address zone modifiers (see linux/mmzone.h - low four bits)
  *
@@ -50,7 +79,9 @@ struct vm_area_struct;
 #define __GFP_DMA32	((__force gfp_t)___GFP_DMA32)
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* Page is movable */
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* ZONE_MOVABLE allowed */
+#define __GFP_PMONLY	((__force gfp_t)___GFP_PMONLY)  /* hustard */
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
+//#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_PMONLY|__GFP_MOVABLE)
 
 /*
  * Page mobility and placement hints
@@ -332,10 +363,26 @@ static inline bool gfpflags_allow_blocking(const gfp_t gfp_flags)
  * ZONES_SHIFT must be <= 2 on 32 bit platforms.
  */
 
-#if 16 * ZONES_SHIFT > BITS_PER_LONG
+#if 16 * ZONES_SHIFT > BITS_PER_LONG //16 * 2 > 64
 #error ZONES_SHIFT too large to create GFP_ZONE_TABLE integer
 #endif
 
+
+
+/*
+ * GFP_ZONE_TABLE( 
+ * 0x00000002
+ * 0x00000000
+ * 0x00000020 
+ * 0x00000100 
+ * 0x00020000
+ * 0x00000000
+ * 0x00300000
+ * 0x01000000
+ *
+ *  OPT_ZONE_HIGHMEM -> ZONE_NORMAL
+ *  0x0 | 0x1 | 0x2 | 0x4! | 0x8 | 0x9| 0xa | 0xc | 
+ *  */
 #define GFP_ZONE_TABLE ( \
 	(ZONE_NORMAL << 0 * ZONES_SHIFT)				      \
 	| (OPT_ZONE_DMA << ___GFP_DMA * ZONES_SHIFT)			      \
@@ -353,6 +400,7 @@ static inline bool gfpflags_allow_blocking(const gfp_t gfp_flags)
  * entry starting with bit 0. Bit is set if the combination is not
  * allowed.
  */
+//  0x3 | 0x5 | 0x6 | 0x7 | 0xb | 0xd | 0xe | 0xf
 #define GFP_ZONE_BAD ( \
 	1 << (___GFP_DMA | ___GFP_HIGHMEM)				      \
 	| 1 << (___GFP_DMA | ___GFP_DMA32)				      \
@@ -368,9 +416,13 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 {
 	enum zone_type z;
 	int bit = (__force int) (flags & GFP_ZONEMASK);
+	//hustard: lowest 4bit store to bit variable
 
 	z = (GFP_ZONE_TABLE >> (bit * ZONES_SHIFT)) &
-					 ((1 << ZONES_SHIFT) - 1);
+					 ((1 << ZONES_SHIFT) - 1); 
+	if(!(bit == 0xa || bit == 0x0 || bit == 0x2 || bit == 0x8))
+		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
+	// z = ---- & 011
 	VM_BUG_ON((GFP_ZONE_BAD >> bit) & 1);
 	return z;
 }

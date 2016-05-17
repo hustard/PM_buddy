@@ -1480,7 +1480,7 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				printk("null pm_area!!\n");
 				return NULL;
 			} else {
-				printk("pm_area->nr_free %lu", pm_area->nr_free);
+				printk("pm_area->nr_free %lu migrate type %d\n", pm_area->nr_free, migratetype);
 			}
 			pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
 					struct page, lru);
@@ -1488,10 +1488,12 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				printk("null pm_page!!\n");
 				return NULL;
 			} else {
-				printk("pm_area->nr_free %lu", pm_area->nr_free);
+				printk("pm_page->order %lu\n", pm_page->private);
 			}
-//			list_add_tail(&page->lru, &max_area->free_list[migratetype]);
-			printk("migration time!!\n");
+			if(migratetype == 1){
+				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
+				printk("migration time!!\n");
+			}
 		}
 
 		return page;

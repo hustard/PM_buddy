@@ -1455,8 +1455,8 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 						int migratetype)
 {
 	unsigned int current_order;
-	struct free_area *area;
-	struct page *page;
+	struct free_area *area, *max_area, *pm_area;
+	struct page *page, *pm_page;
 
 	/* Find a page of the appropriate size in the preferred list */
 	for (current_order = order; current_order < MAX_ORDER; ++current_order) {
@@ -1470,6 +1470,30 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 		area->nr_free--;
 		expand(zone, page, order, current_order, area, migratetype);
 		set_pcppage_migratetype(page, migratetype);
+
+			
+		max_area = &(zone->free_area[MAX_ORDER - 1]);
+		//hustard
+		if(page_zonenum(page) == 2 && max_area->nr_free < 128) {
+			pm_area = &((&NODE_DATA(page_to_nid(page))->node_zones[4])->free_area[MAX_ORDER - 1]);
+			if(!pm_area) {
+				printk("null pm_area!!\n");
+				return NULL;
+			} else {
+				printk("pm_area->nr_free %lu", pm_area->nr_free);
+			}
+			pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
+					struct page, lru);
+			if(!pm_page) {
+				printk("null pm_page!!\n");
+				return NULL;
+			} else {
+				printk("pm_area->nr_free %lu", pm_area->nr_free);
+			}
+//			list_add_tail(&page->lru, &max_area->free_list[migratetype]);
+			printk("migration time!!\n");
+		}
+
 		return page;
 	}
 
@@ -3265,7 +3289,7 @@ retry_cpuset:
 	ac.classzone_idx = zonelist_zone_idx(preferred_zoneref);
 
 	/* First allocation attempt */
-	alloc_mask = gfp_mask|__GFP_HARDWALL; //hustard: allocation through cpu set
+	alloc_mask = gfp_mask|__GFP_HARDWALL;
 	page = get_page_from_freelist(alloc_mask, order, alloc_flags, &ac);
 	if (unlikely(!page)) {
 		/*

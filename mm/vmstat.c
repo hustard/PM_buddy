@@ -951,6 +951,7 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 		seq_printf(m, "%6lu ", zone->free_area[order].nr_free);
 	seq_putc(m, '\n');
 
+	//hustard
 	printk("section width %d, shift %d\nnode width %d, shift %d\nzone width %d, shift %d\nlast_cpuid width %d, shift %d\n",
 			SECTIONS_WIDTH, SECTIONS_SHIFT,
 			NODES_WIDTH, NODES_SHIFT,
@@ -962,6 +963,8 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 			SECTIONS_PGOFF, SECTIONS_PGSHIFT, NODES_PGOFF, NODES_PGSHIFT);
 	printk("zones_pgoff %d, zones_pgshift %d lastcpuid_pgoff %d pastcpuid_pgshift %d\n",
 			ZONES_PGOFF, ZONES_PGSHIFT, LAST_CPUPID_PGOFF, LAST_CPUPID_PGSHIFT);
+	printk("BITS_PER_LONG %d, BITS_PER_LONG_LONG %d\n",
+			BITS_PER_LONG, BITS_PER_LONG_LONG);
 
 }
 

@@ -363,7 +363,8 @@ static inline bool gfpflags_allow_blocking(const gfp_t gfp_flags)
  * ZONES_SHIFT must be <= 2 on 32 bit platforms.
  */
 
-#if 16 * ZONES_SHIFT > BITS_PER_LONG //16 * 2 > 64
+//#if 16 * ZONES_SHIFT > BITS_PER_LONG
+#if 16 * ZONES_SHIFT > BITS_PER_LONG_LONG //16 * 2 > 64
 #error ZONES_SHIFT too large to create GFP_ZONE_TABLE integer
 #endif
 

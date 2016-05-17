@@ -952,19 +952,19 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 	seq_putc(m, '\n');
 
 	//hustard
-	printk("section width %d, shift %d\nnode width %d, shift %d\nzone width %d, shift %d\nlast_cpuid width %d, shift %d\n",
-			SECTIONS_WIDTH, SECTIONS_SHIFT,
-			NODES_WIDTH, NODES_SHIFT,
-			ZONES_WIDTH, ZONES_SHIFT,
-			LAST_CPUPID_WIDTH, LAST_CPUPID_SHIFT);
-	printk("section_SIZE_BITS %d, max_phyaddr_BITS %d max_phymem_bits %d\n",
-			SECTION_SIZE_BITS, MAX_PHYSADDR_BITS, MAX_PHYSMEM_BITS);
-	printk("section_pgoff %d, section_pgshift %d nodes_pgoff %d nodes_pgshift %d\n",
-			SECTIONS_PGOFF, SECTIONS_PGSHIFT, NODES_PGOFF, NODES_PGSHIFT);
-	printk("zones_pgoff %d, zones_pgshift %d lastcpuid_pgoff %d pastcpuid_pgshift %d\n",
-			ZONES_PGOFF, ZONES_PGSHIFT, LAST_CPUPID_PGOFF, LAST_CPUPID_PGSHIFT);
-	printk("BITS_PER_LONG %d, BITS_PER_LONG_LONG %d\n",
-			BITS_PER_LONG, BITS_PER_LONG_LONG);
+//	printk("section width %d, shift %d\nnode width %d, shift %d\nzone width %d, shift %d\nlast_cpuid width %d, shift %d\n",
+//			SECTIONS_WIDTH, SECTIONS_SHIFT,
+//			NODES_WIDTH, NODES_SHIFT,
+//			ZONES_WIDTH, ZONES_SHIFT,
+//			LAST_CPUPID_WIDTH, LAST_CPUPID_SHIFT);
+//	printk("section_SIZE_BITS %d, max_phyaddr_BITS %d max_phymem_bits %d\n",
+//			SECTION_SIZE_BITS, MAX_PHYSADDR_BITS, MAX_PHYSMEM_BITS);
+//	printk("section_pgoff %d, section_pgshift %d nodes_pgoff %d nodes_pgshift %d\n",
+//			SECTIONS_PGOFF, SECTIONS_PGSHIFT, NODES_PGOFF, NODES_PGSHIFT);
+//	printk("zones_pgoff %d, zones_pgshift %d lastcpuid_pgoff %d pastcpuid_pgshift %d\n",
+//			ZONES_PGOFF, ZONES_PGSHIFT, LAST_CPUPID_PGOFF, LAST_CPUPID_PGSHIFT);
+//	printk("BITS_PER_LONG %d, BITS_PER_LONG_LONG %d\n",
+//			BITS_PER_LONG, BITS_PER_LONG_LONG);
 
 }
 

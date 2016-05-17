@@ -36,6 +36,7 @@ struct vm_area_struct;
 #define ___GFP_OTHER_NODE	0x800000u
 #define ___GFP_WRITE		0x1000000u
 #define ___GFP_KSWAPD_RECLAIM	0x2000000u
+#define ___GFP_PMONLY	0x4000000u
 /* If the above are modified, __GFP_BITS_SHIFT may need updating */
 
 //hustard
@@ -80,8 +81,8 @@ struct vm_area_struct;
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* Page is movable */
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* ZONE_MOVABLE allowed */
 #define __GFP_PMONLY	((__force gfp_t)___GFP_PMONLY)  /* hustard */
-#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
-//#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_PMONLY|__GFP_MOVABLE)
+//#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
+#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_PMONLY|__GFP_MOVABLE)
 
 /*
  * Page mobility and placement hints
@@ -217,7 +218,7 @@ struct vm_area_struct;
 #define __GFP_OTHER_NODE ((__force gfp_t)___GFP_OTHER_NODE)
 
 /* Room for N __GFP_FOO bits */
-#define __GFP_BITS_SHIFT 26
+#define __GFP_BITS_SHIFT 27
 #define __GFP_BITS_MASK ((__force gfp_t)((1 << __GFP_BITS_SHIFT) - 1))
 
 /*
@@ -257,6 +258,7 @@ struct vm_area_struct;
  * GFP_DMA32 is similar to GFP_DMA except that the caller requires a 32-bit
  *   address.
  *
+		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
  * GFP_HIGHUSER is for userspace allocations that may be mapped to userspace,
  *   do not need to be directly accessible by the kernel but that cannot
  *   move once in use. An example may be a hardware allocation that maps
@@ -287,6 +289,7 @@ struct vm_area_struct;
 #define GFP_TRANSHUGE	((GFP_HIGHUSER_MOVABLE | __GFP_COMP | \
 			 __GFP_NOMEMALLOC | __GFP_NORETRY | __GFP_NOWARN) & \
 			 ~__GFP_KSWAPD_RECLAIM)
+#define GFP_PMONLY	__GFP_PMONLY
 
 /* Convert GFP flags to their corresponding migrate type */
 #define GFP_MOVABLE_MASK (__GFP_RECLAIMABLE|__GFP_MOVABLE)
@@ -422,6 +425,8 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 	z = (GFP_ZONE_TABLE >> (bit * ZONES_SHIFT)) &
 					 ((1 << ZONES_SHIFT) - 1); 
 	if(!(bit == 0xa || bit == 0x0 || bit == 0x2 || bit == 0x8))
+		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
+	else if(z == 5)
 		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
 	// z = ---- & 011
 	VM_BUG_ON((GFP_ZONE_BAD >> bit) & 1);

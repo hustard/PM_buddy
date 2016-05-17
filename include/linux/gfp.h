@@ -384,18 +384,19 @@ static inline bool gfpflags_allow_blocking(const gfp_t gfp_flags)
  * 0x00300000
  * 0x01000000
  *
+ *  0x01320122 => c2001082
  *  OPT_ZONE_HIGHMEM -> ZONE_NORMAL
  *  0x0 | 0x1 | 0x2 | 0x4! | 0x8 | 0x9| 0xa | 0xc | 
  *  */
 #define GFP_ZONE_TABLE ( \
-	(ZONE_NORMAL << 0 * ZONES_SHIFT)				      \
-	| (OPT_ZONE_DMA << ___GFP_DMA * ZONES_SHIFT)			      \
-	| (OPT_ZONE_HIGHMEM << ___GFP_HIGHMEM * ZONES_SHIFT)		      \
-	| (OPT_ZONE_DMA32 << ___GFP_DMA32 * ZONES_SHIFT)		      \
-	| (ZONE_NORMAL << ___GFP_MOVABLE * ZONES_SHIFT)			      \
-	| (OPT_ZONE_DMA << (___GFP_MOVABLE | ___GFP_DMA) * ZONES_SHIFT)	      \
-	| (ZONE_MOVABLE << (___GFP_MOVABLE | ___GFP_HIGHMEM) * ZONES_SHIFT)   \
-	| (OPT_ZONE_DMA32 << (___GFP_MOVABLE | ___GFP_DMA32) * ZONES_SHIFT)   \
+	(ZONE_NORMAL << 0 * ZONES_TABLE_SHIFT)				      \
+	| (OPT_ZONE_DMA << ___GFP_DMA * ZONES_TABLE_SHIFT)			      \
+	| (OPT_ZONE_HIGHMEM << ___GFP_HIGHMEM * ZONES_TABLE_SHIFT)		      \
+	| (OPT_ZONE_DMA32 << ___GFP_DMA32 * ZONES_TABLE_SHIFT)		      \
+	| (ZONE_NORMAL << ___GFP_MOVABLE * ZONES_TABLE_SHIFT)			      \
+	| (OPT_ZONE_DMA << (___GFP_MOVABLE | ___GFP_DMA) * ZONES_TABLE_SHIFT)	      \
+	| (ZONE_MOVABLE << (___GFP_MOVABLE | ___GFP_HIGHMEM) * ZONES_TABLE_SHIFT)   \
+	| (OPT_ZONE_DMA32 << (___GFP_MOVABLE | ___GFP_DMA32) * ZONES_TABLE_SHIFT)   \
 )
 
 /*
@@ -422,13 +423,16 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 	int bit = (__force int) (flags & GFP_ZONEMASK);
 	//hustard: lowest 4bit store to bit variable
 
-	z = (GFP_ZONE_TABLE >> (bit * ZONES_SHIFT)) &
-					 ((1 << ZONES_SHIFT) - 1); 
-	if(!(bit == 0xa || bit == 0x0 || bit == 0x2 || bit == 0x8))
-		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
-	else if(z == 5)
-		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
+	z = (GFP_ZONE_TABLE >> (bit * ZONES_TABLE_SHIFT)) &
+					 ((1 << ZONES_TABLE_SHIFT) - 1); 
+//	if(!(bit == 0xa || bit == 0x0 || bit == 0x2 || bit == 0x8))
+//		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
+//	else if(z == 5)
+//		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
 	// z = ---- & 011
+	if(z == 5)	
+		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
+
 	VM_BUG_ON((GFP_ZONE_BAD >> bit) & 1);
 	return z;
 }

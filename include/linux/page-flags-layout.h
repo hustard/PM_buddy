@@ -23,6 +23,8 @@
 #error ZONES_SHIFT -- too many zones configured adjust calculation
 #endif
 
+#define ZONES_TABLE_SHIFT 2
+
 #ifdef CONFIG_SPARSEMEM
 #include <asm/sparsemem.h>
 

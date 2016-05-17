@@ -1950,7 +1950,7 @@ static void drain_pages(unsigned int cpu)
 
 	for_each_populated_zone(zone) {
 		//hustard
-		printk("drain_pages\n");
+	//	printk("drain_pages\n");
 		drain_pages_zone(cpu, zone);
 	}
 }

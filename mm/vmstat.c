@@ -914,7 +914,7 @@ static void walk_zones_in_node(struct seq_file *m, pg_data_t *pgdat,
 
 	for (zone = node_zones; zone - node_zones < MAX_NR_ZONES; ++zone) {
 		if (!populated_zone(zone)){
-			printk("!populated_zone\n");
+		//	printk("!populated_zone\n");
 			continue;
 		}
 		//hustard
@@ -966,6 +966,7 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 //	printk("BITS_PER_LONG %d, BITS_PER_LONG_LONG %d\n",
 //			BITS_PER_LONG, BITS_PER_LONG_LONG);
 
+//	printk("GFP_ZONE_TABLE %llx\n",GFP_ZONE_TABLE);
 }
 
 /*

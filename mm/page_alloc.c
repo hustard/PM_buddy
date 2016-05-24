@@ -1352,6 +1352,7 @@ static inline void expand(struct zone *zone, struct page *page,
 		area--;
 		high--;
 		size >>= 1;
+//		hustard
 		VM_BUG_ON_PAGE(bad_range(zone, &page[size]), &page[size]);
 
 		if (IS_ENABLED(CONFIG_DEBUG_PAGEALLOC) &&
@@ -1474,24 +1475,31 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			
 		max_area = &(zone->free_area[MAX_ORDER - 1]);
 		//hustard
-		if(page_zonenum(page) == 2 && max_area->nr_free < 128) {
+		if(page_zonenum(page) == 2 && max_area->nr_free < 1024) {
 			pm_area = &((&NODE_DATA(page_to_nid(page))->node_zones[4])->free_area[MAX_ORDER - 1]);
 			if(!pm_area) {
 				printk("null pm_area!!\n");
 				return NULL;
 			} else {
-				printk("pm_area->nr_free %lu", pm_area->nr_free);
+				//printk("pm_area->nr_free %lu migrate type %d\n", pm_area->nr_free, migratetype);
+				;
 			}
 			pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
 					struct page, lru);
 			if(!pm_page) {
-				printk("null pm_page!!\n");
+				//printk("null pm_page!!\n");
 				return NULL;
 			} else {
-				printk("pm_area->nr_free %lu", pm_area->nr_free);
+				//printk("pm_page->order %lu\n", pm_page->private);
+				;
 			}
-//			list_add_tail(&page->lru, &max_area->free_list[migratetype]);
-			printk("migration time!!\n");
+			if(migratetype == 1 && pm_area->nr_free > 0){
+				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
+				pm_area->nr_free--;
+				max_area->nr_free++;
+//				list_add(&pm_page->lru, &max_area->free_list[migratetype]);
+//				printk("migration time!!\n");
+			}
 		}
 
 		return page;
@@ -2327,6 +2335,7 @@ struct page *buffered_rmqueue(struct zone *preferred_zone,
 	zone_statistics(preferred_zone, zone, gfp_flags);
 	local_irq_restore(flags);
 
+//	hustard
 	VM_BUG_ON_PAGE(bad_range(zone, page), page);
 	return page;
 
@@ -3290,6 +3299,7 @@ retry_cpuset:
 
 	/* First allocation attempt */
 	alloc_mask = gfp_mask|__GFP_HARDWALL;
+//	printk("before get_page_from_freelist???\n");
 	page = get_page_from_freelist(alloc_mask, order, alloc_flags, &ac);
 	if (unlikely(!page)) {
 		/*
@@ -3297,6 +3307,9 @@ retry_cpuset:
 		 * can deadlock because I/O on the device might not
 		 * complete.
 		 */
+
+		//hustard
+		printk("go to swap???\n");
 		alloc_mask = memalloc_noio_flags(gfp_mask);
 		ac.spread_dirty_pages = false;
 
@@ -3350,6 +3363,10 @@ EXPORT_SYMBOL(get_zeroed_page);
 
 void __free_pages(struct page *page, unsigned int order)
 {
+	//hustard
+	if (page_zonenum(page) == 4)
+		printk("free pmonly zone page");
+
 	if (put_page_testzero(page)) {
 		if (order == 0)
 			free_hot_cold_page(page, false);

@@ -3537,6 +3537,8 @@ void wakeup_kswapd(struct zone *zone, int order, enum zone_type classzone_idx)
 {
 	pg_data_t *pgdat;
 
+	//hustard
+	printk("wakeup kswapd\n");
 	if (!populated_zone(zone))
 		return;
 

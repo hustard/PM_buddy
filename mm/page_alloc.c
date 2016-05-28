@@ -1411,6 +1411,11 @@ static int prep_new_page(struct page *page, unsigned int order, gfp_t gfp_flags,
 {
 	int i;
 
+
+	//hustard
+	if(page_zonenum(page) == 4)
+		printk("prep_new_page\n");
+
 	for (i = 0; i < (1 << order); i++) {
 		struct page *p = page + i;
 		if (unlikely(check_new_page(p)))
@@ -1473,9 +1478,9 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 		set_pcppage_migratetype(page, migratetype);
 
 			
-		max_area = &(zone->free_area[MAX_ORDER - 1]);
 		//hustard
-		if(page_zonenum(page) == 2 && max_area->nr_free < 1024) {
+		if(page_zonenum(page) == 2 && max_area->nr_free < 1024 && current_order == MAX_ORDER - 1 && migratetype == 1) {
+			max_area = &(zone->free_area[MAX_ORDER - 1]);
 			pm_area = &((&NODE_DATA(page_to_nid(page))->node_zones[4])->free_area[MAX_ORDER - 1]);
 			if(!pm_area) {
 				printk("null pm_area!!\n");
@@ -1486,6 +1491,9 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			}
 			pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
 					struct page, lru);
+			//insert!!!
+			list_del(&pm_page->lru);
+
 			if(!pm_page) {
 				//printk("null pm_page!!\n");
 				return NULL;
@@ -1493,20 +1501,21 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				//printk("pm_page->order %lu\n", pm_page->private);
 				;
 			}
-			if(migratetype == 1 && pm_area->nr_free > 0){
-				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
+			if(pm_area->nr_free > 0){
+				list_add(&pm_page->lru, &max_area->free_list[migratetype]);
 				pm_area->nr_free--;
 				max_area->nr_free++;
-//				list_add(&pm_page->lru, &max_area->free_list[migratetype]);
-//				printk("migration time!!\n");
-				printk("pm_page->order %lu\n", pm_page->private);
-			}
-			if(migratetype == 1){
-				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
 				printk("migration time!!\n");
+				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
 			}
+//			if(migratetype == 1){
+//				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
+//				printk("migration time!!\n");
+//			}
 		}
 
+		if(page_zonenum(page) == 4)
+			printk("pmonly zone page allocated!!\n");
 		return page;
 	}
 

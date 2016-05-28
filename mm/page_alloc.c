@@ -1037,6 +1037,10 @@ static void __free_pages_ok(struct page *page, unsigned int order)
 	if (!free_pages_prepare(page, order))
 		return;
 
+	//hustard
+	if (page_zonenum(page) == 4)
+		printk("free pmonly zone page");
+
 	migratetype = get_pfnblock_migratetype(page, pfn);
 	local_irq_save(flags);
 	__count_vm_events(PGFREE, 1 << order);
@@ -1476,11 +1480,11 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 		set_pcppage_migratetype(page, migratetype);
 
 		//hustard
-		//if(page_zonenum(page) == 2 && max_area->nr_free < 512 && current_order == MAX_ORDER - 1 && migratetype == 1) {
-		if(page_zonenum(page) == 2 && max_area->nr_free < 512 && migratetype == 1) {
+//		if(page_zonenum(page) == 2 && max_area->nr_free < 50 && current_order == MAX_ORDER - 1 && migratetype == 1) {
+		if(page_zonenum(page) == 2 && max_area->nr_free < 50 && migratetype == 1) {
 			pm_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
 			pm_area = &pm_zone->free_area[MAX_ORDER - 1];
-			if(!pm_area && pm_area->nr_free < 1) {
+			if(!pm_area || pm_area->nr_free < 1) {
 				return page;
 			} else {
 				pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
@@ -3354,10 +3358,6 @@ EXPORT_SYMBOL(get_zeroed_page);
 
 void __free_pages(struct page *page, unsigned int order)
 {
-	//hustard
-	if (page_zonenum(page) == 4)
-		printk("free pmonly zone page");
-
 	if (put_page_testzero(page)) {
 		if (order == 0 && page_zonenum(page) != 4)
 			free_hot_cold_page(page, false);

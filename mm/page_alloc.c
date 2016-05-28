@@ -1475,24 +1475,16 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 		expand(zone, page, order, current_order, area, migratetype);
 		set_pcppage_migratetype(page, migratetype);
 
-			
 		//hustard
 		if(page_zonenum(page) == 2 && max_area->nr_free < 1024 && current_order == MAX_ORDER - 1 && migratetype == 1) {
 			pm_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
 			pm_area = &pm_zone->free_area[MAX_ORDER - 1];
-			if(!pm_area) {
-				return NULL;
-			} 
-			
-			pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
-					struct page, lru);
-			list_del(&pm_page->lru);
-
-			if(!pm_page) {
-				return NULL;
-			} 
-			
-			if(pm_area->nr_free > 0){
+			if(!pm_area && pm_area->nr_free < 1) {
+				return page;
+			} else {
+				pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
+						struct page, lru);
+				list_del(&pm_page->lru);
 				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
 				pm_area->nr_free--;
 				max_area->nr_free++;
@@ -1501,10 +1493,8 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			}
 		}
 		//end
-
 		return page;
 	}
-
 	return NULL;
 }
 

@@ -1490,6 +1490,8 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
 						struct page, lru);
 				list_del(&pm_page->lru);
+				//change zone type
+				set_page_zone(pm_page, ZONE_NORMAL);
 				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
 				pm_area->nr_free--;
 				max_area->nr_free++;
@@ -1498,6 +1500,8 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			}
 		}
 		//end
+		if(page_zonenum(page) == ZONE_PMONLY)
+			set_page_zone(page, ZONE_NORMAL);
 		return page;
 	}
 	return NULL;

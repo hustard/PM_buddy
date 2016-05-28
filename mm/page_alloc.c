@@ -1463,6 +1463,7 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 	unsigned int current_order;
 	struct free_area *area, *max_area, *pm_area;
 	struct page *page, *pm_page;
+	struct zone *pm_zone;
 
 	/* Find a page of the appropriate size in the preferred list */
 	for (current_order = order; current_order < MAX_ORDER; ++current_order) {
@@ -1479,9 +1480,10 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 
 			
 		//hustard
+		max_area = &(zone->free_area[MAX_ORDER - 1]);
 		if(page_zonenum(page) == 2 && max_area->nr_free < 1024 && current_order == MAX_ORDER - 1 && migratetype == 1) {
-			max_area = &(zone->free_area[MAX_ORDER - 1]);
-			pm_area = &((&NODE_DATA(page_to_nid(page))->node_zones[4])->free_area[MAX_ORDER - 1]);
+			pm_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+			pm_area = &pm_zone->free_area[MAX_ORDER - 1];
 			if(!pm_area) {
 				printk("null pm_area!!\n");
 				return NULL;
@@ -1507,6 +1509,7 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				max_area->nr_free++;
 				printk("migration time!!\n");
 				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
+				__mod_zone_page_state(pm_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
 			}
 //			if(migratetype == 1){
 //				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
@@ -3323,7 +3326,7 @@ retry_cpuset:
 		 */
 
 		//hustard
-		printk("go to swap???\n");
+//		printk("go to swap???\n");
 		alloc_mask = memalloc_noio_flags(gfp_mask);
 		ac.spread_dirty_pages = false;
 
@@ -3381,7 +3384,7 @@ void __free_pages(struct page *page, unsigned int order)
 	if (page_zonenum(page) == 4)
 		printk("free pmonly zone page");
 
-	if (put_page_testzero(page)) {
+	if (put_page_testzero(page) && page_zonenum(page) != 4) {
 		if (order == 0)
 			free_hot_cold_page(page, false);
 		else

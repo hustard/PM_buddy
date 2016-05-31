@@ -900,6 +900,12 @@ static inline void set_page_links(struct page *page, enum zone_type zone,
 #endif
 }
 
+//hustard
+static inline void add_page_zone(struct page *page, enum zone_type zone)
+{
+	page->flags |= (zone & ZONES_MASK) << ZONES_PGSHIFT;
+}
+
 #ifdef CONFIG_MEMCG
 static inline struct mem_cgroup *page_memcg(struct page *page)
 {

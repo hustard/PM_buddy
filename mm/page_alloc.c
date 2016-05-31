@@ -662,6 +662,10 @@ static inline void __free_one_page(struct page *page,
 	unsigned long uninitialized_var(buddy_idx);
 	struct page *buddy;
 	unsigned int max_order;
+	
+	//hustard
+	struct zone *pm_zone;
+	struct free_area *pm_area;
 
 	max_order = min_t(unsigned int, MAX_ORDER, pageblock_order + 1);
 
@@ -748,7 +752,20 @@ done_merging:
 		}
 	}
 
-	list_add(&page->lru, &zone->free_area[order].free_list[migratetype]);
+	//hustard
+
+	if(page_zonenum(page) == 2 && migratetype == 1
+			&& page_to_pfn(page) > zone_end_pfn(zone) && page_private(page) == MAX_ORDER - 1){
+		pm_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+		pm_area = &pm_zone->free_area[MAX_ORDER - 1];
+		list_add(&page->lru, &pm_area->free_list[migratetype]);
+		pm_area->nr_free++;
+		zone->free_area[order].nr_free--;
+		__mod_zone_page_state(zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+		__mod_zone_page_state(pm_zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
+		set_page_zone(page, ZONE_PMONLY);
+	} else
+		list_add(&page->lru, &zone->free_area[order].free_list[migratetype]);
 out:
 	zone->free_area[order].nr_free++;
 }
@@ -1373,6 +1390,12 @@ static inline void expand(struct zone *zone, struct page *page,
 		}
 		list_add(&page[size].lru, &area->free_list[migratetype]);
 		area->nr_free++;
+
+//		if(page_zonenum(&page[size << 1]) == (ZONE_PMONLY | ZONE_NORMAL))
+//			add_page_zone(&page[size], ZONE_NORMAL);
+//		if(page_zonenum(&page[size << 1]) == ZONE_PMONLY)
+//			set_page_zone(&page[size], ZONE_NORMAL);
+
 		set_page_order(&page[size], high);
 	}
 }
@@ -1492,6 +1515,7 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				list_del(&pm_page->lru);
 				//change zone type
 				set_page_zone(pm_page, ZONE_NORMAL);
+				//add_page_zone(pm_page, ZONE_NORMAL);
 				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
 				pm_area->nr_free--;
 				max_area->nr_free++;
@@ -1500,7 +1524,8 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			}
 		}
 		//end
-		if(page_zonenum(page) == ZONE_PMONLY)
+//		if(page_zonenum(page) & ZONE_PMONLY )
+//			add_page_zone(page, ZONE_NORMAL);
 			set_page_zone(page, ZONE_NORMAL);
 		return page;
 	}

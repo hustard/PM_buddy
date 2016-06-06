@@ -106,8 +106,8 @@ static struct page *brd_insert_page(struct brd_device *brd, sector_t sector)
 	 * restriction might be able to be lifted.
 	 */
 	//hustard
-//	gfp_flags = GFP_NOIO | __GFP_ZERO | __GFP_DMA32;
-	gfp_flags = GFP_NOIO | __GFP_ZERO;
+	gfp_flags = GFP_NOIO | __GFP_ZERO | __GFP_PMONLY;
+//	gfp_flags = GFP_NOIO | __GFP_ZERO;
 #ifndef CONFIG_BLK_DEV_RAM_DAX
 	gfp_flags |= __GFP_HIGHMEM;
 #endif

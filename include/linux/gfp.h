@@ -430,8 +430,17 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 //	else if(z == 5)
 //		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
 	// z = ---- & 011
-	if(bit & __GFP_PMONLY)	
+
+	if(bit & __GFP_PMONLY){
 		z = 4;
+		printk("gfp_flags %x\n",bit);
+	}
+
+//	if(bit & __GFP_PMONLY)	
+//		printk("pmonly flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
+//	else if(z == 2)
+//		printk("z==2 flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
+//		z = 4;
 
 	VM_BUG_ON((GFP_ZONE_BAD >> bit) & 1);
 	return z;

@@ -2594,6 +2594,12 @@ zonelist_scan:
 								ac->nodemask) {
 		unsigned long mark;
 
+		if(gfp_mask & __GFP_PMONLY){
+			printk("allocmask %x, zone num %d \n", alloc_flags, zone_id(zone));
+			alloc_flags = alloc_flags & (~0x40U) & (~0x100U);
+			printk("allocmask %x, zone num %d \n", alloc_flags, zone_id(zone));
+		}
+
 		if (cpusets_enabled() &&
 			(alloc_flags & ALLOC_CPUSET) &&
 			!cpuset_zone_allowed(zone, gfp_mask))
@@ -3270,6 +3276,8 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	struct zoneref *preferred_zoneref;
 	struct page *page = NULL;
 	unsigned int cpuset_mems_cookie;
+///	int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET;
+	//hustard
 	int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET|ALLOC_FAIR;
 	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
 	struct alloc_context ac = {
@@ -3314,6 +3322,8 @@ retry_cpuset:
 	if (!ac.preferred_zone)
 		goto out;
 	ac.classzone_idx = zonelist_zone_idx(preferred_zoneref);
+	if(gfp_mask & __GFP_PMONLY)
+		printk("zone ac.classzone_idx %d\n", ac.classzone_idx);
 
 	/* First allocation attempt */
 	alloc_mask = gfp_mask|__GFP_HARDWALL;

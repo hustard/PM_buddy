@@ -764,6 +764,7 @@ done_merging:
 		__mod_zone_page_state(zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
 		__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
 		set_page_zone(page, ZONE_PMMIGRATE);
+		set_pcppage_migratetype(page, 1);
 	} else if(page_to_pfn(page) < zone_start_pfn(zone) && page_zonenum(page) == 5 
 			&& migratetype == 1 && page_private(page) == MAX_ORDER - 1){
 		pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
@@ -1526,6 +1527,7 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 						struct page, lru);
 				list_del(&pmigrate_page->lru);
 				set_page_zone(pmigrate_page, ZONE_NORMAL);
+				set_pcppage_migratetype(pmigrate_page, migratetype);
 				list_add_tail(&pmigrate_page->lru, &max_area->free_list[migratetype]);
 				pmigrate_area->nr_free--;
 				max_area->nr_free++;
@@ -1554,9 +1556,10 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 //		if(page_zonenum(page) == 5)
 //			printk("pmonly page alloc migratetype %d, order %d\n", migratetype, page_private(page));
 
-		if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_NORMAL )
+		if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_NORMAL) {
 			set_page_zone(page, ZONE_NORMAL);
-		else if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_PMONLY ){
+			set_pcppage_migratetype(page, migratetype);
+		} else if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_PMONLY){
 			set_page_zone(page, ZONE_PMONLY);
 			set_pcppage_migratetype(page, migratetype);
 		}
@@ -3435,7 +3438,8 @@ EXPORT_SYMBOL(get_zeroed_page);
 void __free_pages(struct page *page, unsigned int order)
 {
 	if (put_page_testzero(page)) {
-		if (order == 0 && page_zonenum(page) != 4)
+		if (order == 0 && !(MAX_NORMAL_PFN < page_to_pfn(page) 
+					&& MAX_PMMIGRATE_PFN >= page_to_pfn(page)))
 			free_hot_cold_page(page, false);
 		else
 			__free_pages_ok(page, order);

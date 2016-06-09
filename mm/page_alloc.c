@@ -221,6 +221,7 @@ static char * const zone_names[MAX_NR_ZONES] = {
 #ifdef CONFIG_ZONE_DEVICE
 	 "Device",
 #endif
+	 "PMMIGRATE",
 	 "PMONLY",
 };
 
@@ -1054,8 +1055,8 @@ static void __free_pages_ok(struct page *page, unsigned int order)
 		return;
 
 	//hustard
-	if (page_zonenum(page) == 4)
-		printk("free pmonly zone page");
+//	if (page_zonenum(page) == 4)
+//		printk("free pmonly zone page");
 
 	migratetype = get_pfnblock_migratetype(page, pfn);
 	local_irq_save(flags);
@@ -2594,10 +2595,13 @@ zonelist_scan:
 								ac->nodemask) {
 		unsigned long mark;
 
+		//hustard
 		if(gfp_mask & __GFP_PMONLY){
-			printk("allocmask %x, zone num %d \n", alloc_flags, zone_id(zone));
+//			printk("allocmask %x, zone num %d \n", alloc_flags, zone_id(zone));
 			alloc_flags = alloc_flags & (~0x40U) & (~0x100U);
-			printk("allocmask %x, zone num %d \n", alloc_flags, zone_id(zone));
+//			alloc_flags = alloc_flags & (~0x40U);
+//			alloc_flags = alloc_flags & (~0x100U);
+//			printk("allocmask %x, zone num %d \n", alloc_flags, zone_id(zone));
 		}
 
 		if (cpusets_enabled() &&
@@ -3322,8 +3326,8 @@ retry_cpuset:
 	if (!ac.preferred_zone)
 		goto out;
 	ac.classzone_idx = zonelist_zone_idx(preferred_zoneref);
-	if(gfp_mask & __GFP_PMONLY)
-		printk("zone ac.classzone_idx %d\n", ac.classzone_idx);
+//	if(gfp_mask & __GFP_PMONLY)
+//		printk("zone ac.classzone_idx %d\n", ac.classzone_idx);
 
 	/* First allocation attempt */
 	alloc_mask = gfp_mask|__GFP_HARDWALL;
@@ -5806,14 +5810,20 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
 	arch_zone_lowest_possible_pfn[0] = find_min_pfn_with_active_regions();
 	arch_zone_highest_possible_pfn[0] = max_zone_pfn[0];
 	for (i = 1; i < MAX_NR_ZONES; i++) {
+		//hustard
 		if (i == ZONE_MOVABLE){
 			printk("free_area_init_nodes_continuee %d\n",i);
 			continue;
 		}
 		printk("free_area_init_nodess %d\n",i);
-		if (i == ZONE_PMONLY){
+		if (i == ZONE_PMMIGRATE){
 			arch_zone_lowest_possible_pfn[i] =
 				arch_zone_highest_possible_pfn[i-2];
+			arch_zone_highest_possible_pfn[i] =
+				max(max_zone_pfn[i], arch_zone_lowest_possible_pfn[i]);
+		} else if (i == ZONE_PMONLY){
+			arch_zone_lowest_possible_pfn[i] =
+				arch_zone_highest_possible_pfn[i-3];
 			arch_zone_highest_possible_pfn[i] =
 				max(max_zone_pfn[i], arch_zone_lowest_possible_pfn[i]);
 		} else {

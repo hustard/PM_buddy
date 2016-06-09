@@ -317,6 +317,7 @@ enum zone_type {
 #ifdef CONFIG_ZONE_DEVICE
 	ZONE_DEVICE,
 #endif
+	ZONE_PMMIGRATE,
 	ZONE_PMONLY,
 	__MAX_NR_ZONES
 

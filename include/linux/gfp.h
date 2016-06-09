@@ -432,8 +432,8 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 	// z = ---- & 011
 
 	if(bit & __GFP_PMONLY){
-		z = 4;
-		printk("gfp_flags %x\n",bit);
+		z = 5;
+//		printk("gfp_flags %x\n",bit);
 	}
 
 //	if(bit & __GFP_PMONLY)	

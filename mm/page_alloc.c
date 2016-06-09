@@ -665,8 +665,8 @@ static inline void __free_one_page(struct page *page,
 	unsigned int max_order;
 	
 	//hustard
-	struct zone *pm_zone;
-	struct free_area *pm_area;
+	struct zone *pmigrate_zone;
+	struct free_area *pmigrate_area;
 
 	max_order = min_t(unsigned int, MAX_ORDER, pageblock_order + 1);
 
@@ -754,15 +754,25 @@ done_merging:
 	}
 
 	//hustard
-	if(page_zonenum(page) == 2 && migratetype == 1
-			&& page_to_pfn(page) > zone_end_pfn(zone) && page_private(page) == MAX_ORDER - 1){
-		pm_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
-		pm_area = &pm_zone->free_area[MAX_ORDER - 1];
-		list_add(&page->lru, &pm_area->free_list[migratetype]);
-		pm_area->nr_free++;
+	if(page_to_pfn(page) > zone_end_pfn(zone) && page_zonenum(page) == 2 
+			&& migratetype == 1 && page_private(page) == MAX_ORDER - 1){
+		pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+		pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
+		list_add(&page->lru, &pmigrate_area->free_list[migratetype]);
+		pmigrate_area->nr_free++;
 		zone->free_area[order].nr_free--;
 		__mod_zone_page_state(zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
-		__mod_zone_page_state(pm_zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
+		__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
+		set_page_zone(page, ZONE_PMMIGRATE);
+	} else if(page_to_pfn(page) < zone_end_pfn(zone) && page_zonenum(page) == 5 
+			&& migratetype == 1 && page_private(page) == MAX_ORDER - 1){
+		pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+		pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
+		list_add(&page->lru, &pmigrate_area->free_list[migratetype]);
+		pmigrate_area->nr_free++;
+		zone->free_area[order].nr_free--;
+		__mod_zone_page_state(zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+		__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
 		set_page_zone(page, ZONE_PMMIGRATE);
 	} else
 		list_add(&page->lru, &zone->free_area[order].free_list[migratetype]);
@@ -1483,9 +1493,9 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 						int migratetype)
 {
 	unsigned int current_order;
-	struct free_area *area, *max_area, *pm_area;
-	struct page *page, *pm_page;
-	struct zone *pm_zone;
+	struct free_area *area, *max_area, *pmigrate_area;
+	struct page *page, *pmigrate_page;
+	struct zone *pmigrate_zone;
 
 	max_area = &(zone->free_area[MAX_ORDER - 1]);
 
@@ -1504,24 +1514,44 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 
 		//hustard
 		if(page_zonenum(page) == 2 && max_area->nr_free < 50 && migratetype == 1) {
-			pm_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
-			pm_area = &pm_zone->free_area[MAX_ORDER - 1];
-			if(!pm_area || pm_area->nr_free < 1) {
+			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
+			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
 				return page;
 			} else {
-				pm_page = list_first_entry_or_null(&pm_area->free_list[migratetype],
+				pmigrate_page = list_first_entry_or_null(&pmigrate_area->free_list[migratetype],
 						struct page, lru);
-				list_del(&pm_page->lru);
-				set_page_zone(pm_page, ZONE_NORMAL);
-				list_add_tail(&pm_page->lru, &max_area->free_list[migratetype]);
-				pm_area->nr_free--;
+				list_del(&pmigrate_page->lru);
+				set_page_zone(pmigrate_page, ZONE_NORMAL);
+				list_add_tail(&pmigrate_page->lru, &max_area->free_list[migratetype]);
+				pmigrate_area->nr_free--;
 				max_area->nr_free++;
 				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
-				__mod_zone_page_state(pm_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+			}
+		} else if(page_zonenum(page) == 5 && max_area->nr_free < 100 && migratetype == 1) {
+			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
+			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
+				return page;
+			} else {
+				pmigrate_page = list_first_entry_or_null(&pmigrate_area->free_list[migratetype],
+						struct page, lru);
+				list_del(&pmigrate_page->lru);
+				set_page_zone(pmigrate_page, ZONE_NORMAL);
+				list_add_tail(&pmigrate_page->lru, &max_area->free_list[migratetype]);
+				pmigrate_area->nr_free--;
+				max_area->nr_free++;
+				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
+				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
 			}
 		}
-		if(page_zonenum(page) & ZONE_PMMIGRATE )
+
+		if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_NORMAL )
 			set_page_zone(page, ZONE_NORMAL);
+		else if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_PMONLY )
+			set_page_zone(page, ZONE_PMONLY);
+
 		return page;
 	}
 	return NULL;

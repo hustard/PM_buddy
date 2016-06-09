@@ -19,7 +19,7 @@
 #include <linux/radix-tree.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
-#ifdef CONFIG_BLK_DEV_RAM_DAX
+#ifdef CONFIG_BLK_DEV_PRAMDISK_DAX
 #include <linux/pfn_t.h>
 #endif
 
@@ -30,39 +30,39 @@
 #define PAGE_SECTORS		(1 << PAGE_SECTORS_SHIFT)
 
 /*
- * Each block ramdisk device has a radix_tree brd_pages of pages that stores
- * the pages containing the block device's contents. A brd page's ->index is
+ * Each block ramdisk device has a radix_tree pbrd_pages of pages that stores
+ * the pages containing the block device's contents. A pbrd page's ->index is
  * its offset in PAGE_SIZE units. This is similar to, but in no way connected
  * with, the kernel's pagecache or buffer cache (which sit above our block
  * device).
  */
-struct brd_device {
-	int		brd_number;
+struct pbrd_device {
+	int		pbrd_number;
 
-	struct request_queue	*brd_queue;
-	struct gendisk		*brd_disk;
-	struct list_head	brd_list;
+	struct request_queue	*pbrd_queue;
+	struct gendisk		*pbrd_disk;
+	struct list_head	pbrd_list;
 
 	/*
 	 * Backing store of pages and lock to protect it. This is the contents
 	 * of the block device.
 	 */
-	spinlock_t		brd_lock;
-	struct radix_tree_root	brd_pages;
+	spinlock_t		pbrd_lock;
+	struct radix_tree_root	pbrd_pages;
 };
 
 /*
- * Look up and return a brd's page for a given sector.
+ * Look up and return a pbrd's page for a given sector.
  */
-static DEFINE_MUTEX(brd_mutex);
-static struct page *brd_lookup_page(struct brd_device *brd, sector_t sector)
+static DEFINE_MUTEX(pbrd_mutex);
+static struct page *pbrd_lookup_page(struct pbrd_device *pbrd, sector_t sector)
 {
 	pgoff_t idx;
 	struct page *page;
 
 	/*
 	 * The page lifetime is protected by the fact that we have opened the
-	 * device node -- brd pages will never be deleted under us, so we
+	 * device node -- pbrd pages will never be deleted under us, so we
 	 * don't need any further locking or refcounting.
 	 *
 	 * This is strictly true for the radix-tree nodes as well (ie. we
@@ -73,7 +73,7 @@ static struct page *brd_lookup_page(struct brd_device *brd, sector_t sector)
 	 */
 	rcu_read_lock();
 	idx = sector >> PAGE_SECTORS_SHIFT; /* sector to page index */
-	page = radix_tree_lookup(&brd->brd_pages, idx);
+	page = radix_tree_lookup(&pbrd->pbrd_pages, idx);
 	rcu_read_unlock();
 
 	BUG_ON(page && page->index != idx);
@@ -82,17 +82,17 @@ static struct page *brd_lookup_page(struct brd_device *brd, sector_t sector)
 }
 
 /*
- * Look up and return a brd's page for a given sector.
+ * Look up and return a pbrd's page for a given sector.
  * If one does not exist, allocate an empty page, and insert that. Then
  * return it.
  */
-static struct page *brd_insert_page(struct brd_device *brd, sector_t sector)
+static struct page *pbrd_insert_page(struct pbrd_device *pbrd, sector_t sector)
 {
 	pgoff_t idx;
 	struct page *page;
 	gfp_t gfp_flags;
 
-	page = brd_lookup_page(brd, sector);
+	page = pbrd_lookup_page(pbrd, sector);
 	if (page)
 		return page;
 
@@ -105,11 +105,14 @@ static struct page *brd_insert_page(struct brd_device *brd, sector_t sector)
 	 * If DAX was reworked to use pfns and kmap throughout, this
 	 * restriction might be able to be lifted.
 	 */
-	
-	gfp_flags = GFP_NOIO | __GFP_ZERO;
-#ifndef CONFIG_BLK_DEV_RAM_DAX
+	//hustard
+//	gfp_flags = GFP_NOIO | __GFP_ZERO;
+	gfp_flags = GFP_NOIO | __GFP_ZERO | __GFP_PMONLY;
+#ifndef CONFIG_BLK_DEV_PRAMDISK_DAX
 	gfp_flags |= __GFP_HIGHMEM;
 #endif
+
+	gfp_flags = gfp_flags & (~0x2U);
 	
 	page = alloc_page(gfp_flags);
 	if (!page)
@@ -120,40 +123,40 @@ static struct page *brd_insert_page(struct brd_device *brd, sector_t sector)
 		return NULL;
 	}
 
-	spin_lock(&brd->brd_lock);
+	spin_lock(&pbrd->pbrd_lock);
 	idx = sector >> PAGE_SECTORS_SHIFT;
 	page->index = idx;
-	if (radix_tree_insert(&brd->brd_pages, idx, page)) {
+	if (radix_tree_insert(&pbrd->pbrd_pages, idx, page)) {
 		__free_page(page);
-		page = radix_tree_lookup(&brd->brd_pages, idx);
+		page = radix_tree_lookup(&pbrd->pbrd_pages, idx);
 		BUG_ON(!page);
 		BUG_ON(page->index != idx);
 	}
-	spin_unlock(&brd->brd_lock);
+	spin_unlock(&pbrd->pbrd_lock);
 
 	radix_tree_preload_end();
 
 	return page;
 }
 
-static void brd_free_page(struct brd_device *brd, sector_t sector)
+static void pbrd_free_page(struct pbrd_device *pbrd, sector_t sector)
 {
 	struct page *page;
 	pgoff_t idx;
 
-	spin_lock(&brd->brd_lock);
+	spin_lock(&pbrd->pbrd_lock);
 	idx = sector >> PAGE_SECTORS_SHIFT;
-	page = radix_tree_delete(&brd->brd_pages, idx);
-	spin_unlock(&brd->brd_lock);
+	page = radix_tree_delete(&pbrd->pbrd_pages, idx);
+	spin_unlock(&pbrd->pbrd_lock);
 	if (page)
 		__free_page(page);
 }
 
-static void brd_zero_page(struct brd_device *brd, sector_t sector)
+static void pbrd_zero_page(struct pbrd_device *pbrd, sector_t sector)
 {
 	struct page *page;
 
-	page = brd_lookup_page(brd, sector);
+	page = pbrd_lookup_page(pbrd, sector);
 	if (page)
 		clear_highpage(page);
 }
@@ -163,7 +166,7 @@ static void brd_zero_page(struct brd_device *brd, sector_t sector)
  * there are no other users of the device.
  */
 #define FREE_BATCH 16
-static void brd_free_pages(struct brd_device *brd)
+static void pbrd_free_pages(struct pbrd_device *pbrd)
 {
 	unsigned long pos = 0;
 	struct page *pages[FREE_BATCH];
@@ -172,7 +175,7 @@ static void brd_free_pages(struct brd_device *brd)
 	do {
 		int i;
 
-		nr_pages = radix_tree_gang_lookup(&brd->brd_pages,
+		nr_pages = radix_tree_gang_lookup(&pbrd->pbrd_pages,
 				(void **)pages, pos, FREE_BATCH);
 
 		for (i = 0; i < nr_pages; i++) {
@@ -180,7 +183,7 @@ static void brd_free_pages(struct brd_device *brd)
 
 			BUG_ON(pages[i]->index < pos);
 			pos = pages[i]->index;
-			ret = radix_tree_delete(&brd->brd_pages, pos);
+			ret = radix_tree_delete(&pbrd->pbrd_pages, pos);
 			BUG_ON(!ret || ret != pages[i]);
 			__free_page(pages[i]);
 		}
@@ -196,25 +199,25 @@ static void brd_free_pages(struct brd_device *brd)
 }
 
 /*
- * copy_to_brd_setup must be called before copy_to_brd. It may sleep.
+ * copy_to_pbrd_setup must be called before copy_to_pbrd. It may sleep.
  */
-static int copy_to_brd_setup(struct brd_device *brd, sector_t sector, size_t n)
+static int copy_to_pbrd_setup(struct pbrd_device *pbrd, sector_t sector, size_t n)
 {
 	unsigned int offset = (sector & (PAGE_SECTORS-1)) << SECTOR_SHIFT;
 	size_t copy;
 
 	copy = min_t(size_t, n, PAGE_SIZE - offset);
-	if (!brd_insert_page(brd, sector))
+	if (!pbrd_insert_page(pbrd, sector))
 		return -ENOSPC;
 	if (copy < n) {
 		sector += copy >> SECTOR_SHIFT;
-		if (!brd_insert_page(brd, sector))
+		if (!pbrd_insert_page(pbrd, sector))
 			return -ENOSPC;
 	}
 	return 0;
 }
 
-static void discard_from_brd(struct brd_device *brd,
+static void discard_from_pbrd(struct pbrd_device *pbrd,
 			sector_t sector, size_t n)
 {
 	while (n >= PAGE_SIZE) {
@@ -224,18 +227,18 @@ static void discard_from_brd(struct brd_device *brd,
 		 * deadlocks under heavy load.
 		 */
 		if (0)
-			brd_free_page(brd, sector);
+			pbrd_free_page(pbrd, sector);
 		else
-			brd_zero_page(brd, sector);
+			pbrd_zero_page(pbrd, sector);
 		sector += PAGE_SIZE >> SECTOR_SHIFT;
 		n -= PAGE_SIZE;
 	}
 }
 
 /*
- * Copy n bytes from src to the brd starting at sector. Does not sleep.
+ * Copy n bytes from src to the pbrd starting at sector. Does not sleep.
  */
-static void copy_to_brd(struct brd_device *brd, const void *src,
+static void copy_to_pbrd(struct pbrd_device *pbrd, const void *src,
 			sector_t sector, size_t n)
 {
 	struct page *page;
@@ -244,7 +247,7 @@ static void copy_to_brd(struct brd_device *brd, const void *src,
 	size_t copy;
 
 	copy = min_t(size_t, n, PAGE_SIZE - offset);
-	page = brd_lookup_page(brd, sector);
+	page = pbrd_lookup_page(pbrd, sector);
 	BUG_ON(!page);
 
 	dst = kmap_atomic(page);
@@ -255,7 +258,7 @@ static void copy_to_brd(struct brd_device *brd, const void *src,
 		src += copy;
 		sector += copy >> SECTOR_SHIFT;
 		copy = n - copy;
-		page = brd_lookup_page(brd, sector);
+		page = pbrd_lookup_page(pbrd, sector);
 		BUG_ON(!page);
 
 		dst = kmap_atomic(page);
@@ -265,9 +268,9 @@ static void copy_to_brd(struct brd_device *brd, const void *src,
 }
 
 /*
- * Copy n bytes to dst from the brd starting at sector. Does not sleep.
+ * Copy n bytes to dst from the pbrd starting at sector. Does not sleep.
  */
-static void copy_from_brd(void *dst, struct brd_device *brd,
+static void copy_from_pbrd(void *dst, struct pbrd_device *pbrd,
 			sector_t sector, size_t n)
 {
 	struct page *page;
@@ -276,7 +279,7 @@ static void copy_from_brd(void *dst, struct brd_device *brd,
 	size_t copy;
 
 	copy = min_t(size_t, n, PAGE_SIZE - offset);
-	page = brd_lookup_page(brd, sector);
+	page = pbrd_lookup_page(pbrd, sector);
 	if (page) {
 		src = kmap_atomic(page);
 		memcpy(dst, src + offset, copy);
@@ -288,7 +291,7 @@ static void copy_from_brd(void *dst, struct brd_device *brd,
 		dst += copy;
 		sector += copy >> SECTOR_SHIFT;
 		copy = n - copy;
-		page = brd_lookup_page(brd, sector);
+		page = pbrd_lookup_page(pbrd, sector);
 		if (page) {
 			src = kmap_atomic(page);
 			memcpy(dst, src, copy);
@@ -301,7 +304,7 @@ static void copy_from_brd(void *dst, struct brd_device *brd,
 /*
  * Process a single bvec of a bio.
  */
-static int brd_do_bvec(struct brd_device *brd, struct page *page,
+static int pbrd_do_bvec(struct pbrd_device *pbrd, struct page *page,
 			unsigned int len, unsigned int off, int rw,
 			sector_t sector)
 {
@@ -309,18 +312,18 @@ static int brd_do_bvec(struct brd_device *brd, struct page *page,
 	int err = 0;
 
 	if (rw != READ) {
-		err = copy_to_brd_setup(brd, sector, len);
+		err = copy_to_pbrd_setup(pbrd, sector, len);
 		if (err)
 			goto out;
 	}
 
 	mem = kmap_atomic(page);
 	if (rw == READ) {
-		copy_from_brd(mem + off, brd, sector, len);
+		copy_from_pbrd(mem + off, pbrd, sector, len);
 		flush_dcache_page(page);
 	} else {
 		flush_dcache_page(page);
-		copy_to_brd(brd, mem + off, sector, len);
+		copy_to_pbrd(pbrd, mem + off, sector, len);
 	}
 	kunmap_atomic(mem);
 
@@ -328,10 +331,10 @@ out:
 	return err;
 }
 
-static blk_qc_t brd_make_request(struct request_queue *q, struct bio *bio)
+static blk_qc_t pbrd_make_request(struct request_queue *q, struct bio *bio)
 {
 	struct block_device *bdev = bio->bi_bdev;
-	struct brd_device *brd = bdev->bd_disk->private_data;
+	struct pbrd_device *pbrd = bdev->bd_disk->private_data;
 	int rw;
 	struct bio_vec bvec;
 	sector_t sector;
@@ -345,7 +348,7 @@ static blk_qc_t brd_make_request(struct request_queue *q, struct bio *bio)
 		if (sector & ((PAGE_SIZE >> SECTOR_SHIFT) - 1) ||
 		    bio->bi_iter.bi_size & ~PAGE_MASK)
 			goto io_error;
-		discard_from_brd(brd, sector, bio->bi_iter.bi_size);
+		discard_from_pbrd(pbrd, sector, bio->bi_iter.bi_size);
 		goto out;
 	}
 
@@ -357,7 +360,7 @@ static blk_qc_t brd_make_request(struct request_queue *q, struct bio *bio)
 		unsigned int len = bvec.bv_len;
 		int err;
 
-		err = brd_do_bvec(brd, bvec.bv_page, len,
+		err = pbrd_do_bvec(pbrd, bvec.bv_page, len,
 					bvec.bv_offset, rw, sector);
 		if (err)
 			goto io_error;
@@ -372,26 +375,26 @@ io_error:
 	return BLK_QC_T_NONE;
 }
 
-static int brd_rw_page(struct block_device *bdev, sector_t sector,
+static int pbrd_rw_page(struct block_device *bdev, sector_t sector,
 		       struct page *page, int rw)
 {
-	struct brd_device *brd = bdev->bd_disk->private_data;
-	int err = brd_do_bvec(brd, page, PAGE_CACHE_SIZE, 0, rw, sector);
+	struct pbrd_device *pbrd = bdev->bd_disk->private_data;
+	int err = pbrd_do_bvec(pbrd, page, PAGE_CACHE_SIZE, 0, rw, sector);
 	page_endio(page, rw & WRITE, err);
 	
 	return err;
 }
 
-#ifdef CONFIG_BLK_DEV_RAM_DAX
-static long brd_direct_access(struct block_device *bdev, sector_t sector,
+#ifdef CONFIG_BLK_DEV_PRAMDISK_DAX
+static long pbrd_direct_access(struct block_device *bdev, sector_t sector,
 			void __pmem **kaddr, pfn_t *pfn)
 {
-	struct brd_device *brd = bdev->bd_disk->private_data;
+	struct pbrd_device *pbrd = bdev->bd_disk->private_data;
 	struct page *page;
 
-	if (!brd)
+	if (!pbrd)
 		return -ENODEV;
-	page = brd_insert_page(brd, sector);
+	page = pbrd_insert_page(pbrd, sector);
 	if (!page)
 		return -ENOSPC;
 	*kaddr = (void __pmem *)page_address(page);
@@ -400,14 +403,14 @@ static long brd_direct_access(struct block_device *bdev, sector_t sector,
 	return PAGE_SIZE;
 }
 #else
-#define brd_direct_access NULL
+#define pbrd_direct_access NULL
 #endif
 
-static int brd_ioctl(struct block_device *bdev, fmode_t mode,
+static int pbrd_ioctl(struct block_device *bdev, fmode_t mode,
 			unsigned int cmd, unsigned long arg)
 {
 	int error;
-	struct brd_device *brd = bdev->bd_disk->private_data;
+	struct pbrd_device *pbrd = bdev->bd_disk->private_data;
 
 	if (cmd != BLKFLSBUF)
 		return -ENOTTY;
@@ -416,7 +419,7 @@ static int brd_ioctl(struct block_device *bdev, fmode_t mode,
 	 * ram device BLKFLSBUF has special semantics, we want to actually
 	 * release and destroy the ramdisk data.
 	 */
-	mutex_lock(&brd_mutex);
+	mutex_lock(&pbrd_mutex);
 	mutex_lock(&bdev->bd_mutex);
 	error = -EBUSY;
 	if (bdev->bd_openers <= 1) {
@@ -428,32 +431,32 @@ static int brd_ioctl(struct block_device *bdev, fmode_t mode,
 		 * but there is not much we can do to close that race.
 		 */
 		kill_bdev(bdev);
-		brd_free_pages(brd);
+		pbrd_free_pages(pbrd);
 		error = 0;
 	}
 	mutex_unlock(&bdev->bd_mutex);
-	mutex_unlock(&brd_mutex);
+	mutex_unlock(&pbrd_mutex);
 
 	return error;
 }
 
-static const struct block_device_operations brd_fops = {
+static const struct block_device_operations pbrd_fops = {
 	.owner =		THIS_MODULE,
-	.rw_page =		brd_rw_page,
-	.ioctl =		brd_ioctl,
-	.direct_access =	brd_direct_access,
+	.rw_page =		pbrd_rw_page,
+	.ioctl =		pbrd_ioctl,
+	.direct_access =	pbrd_direct_access,
 };
 
 /*
  * And now the modules code and kernel interface.
  */
-static int rd_nr = CONFIG_BLK_DEV_RAM_COUNT;
+static int rd_nr = CONFIG_BLK_DEV_PRAMDISK_COUNT;
 module_param(rd_nr, int, S_IRUGO);
-MODULE_PARM_DESC(rd_nr, "Maximum number of brd devices");
+MODULE_PARM_DESC(rd_nr, "Maximum number of pbrd devices");
 
-int rd_size = CONFIG_BLK_DEV_RAM_SIZE;
+int rd_size = CONFIG_BLK_DEV_PRAMDISK_SIZE;
 module_param(rd_size, int, S_IRUGO);
-MODULE_PARM_DESC(rd_size, "Size of each RAM disk in kbytes.");
+MODULE_PARM_DESC(rd_size, "Size of each PRAM disk in kbytes.");
 
 static int max_part = 1;
 module_param(max_part, int, S_IRUGO);
@@ -477,28 +480,28 @@ __setup("ramdisk_size=", ramdisk_size);
  * The device scheme is derived from loop.c. Keep them in synch where possible
  * (should share code eventually).
  */
-static LIST_HEAD(brd_devices);
-static DEFINE_MUTEX(brd_devices_mutex);
+static LIST_HEAD(pbrd_devices);
+static DEFINE_MUTEX(pbrd_devices_mutex);
 
-static struct brd_device *brd_alloc(int i)
+static struct pbrd_device *pbrd_alloc(int i)
 {
-	struct brd_device *brd;
+	struct pbrd_device *pbrd;
 	struct gendisk *disk;
 
-	brd = kzalloc(sizeof(*brd), GFP_KERNEL);
-	if (!brd)
+	pbrd = kzalloc(sizeof(*pbrd), GFP_KERNEL);
+	if (!pbrd)
 		goto out;
-	brd->brd_number		= i;
-	spin_lock_init(&brd->brd_lock);
-	INIT_RADIX_TREE(&brd->brd_pages, GFP_ATOMIC);
+	pbrd->pbrd_number		= i;
+	spin_lock_init(&pbrd->pbrd_lock);
+	INIT_RADIX_TREE(&pbrd->pbrd_pages, GFP_ATOMIC);
 
-	brd->brd_queue = blk_alloc_queue(GFP_KERNEL);
-	if (!brd->brd_queue)
+	pbrd->pbrd_queue = blk_alloc_queue(GFP_KERNEL);
+	if (!pbrd->pbrd_queue)
 		goto out_free_dev;
 
-	blk_queue_make_request(brd->brd_queue, brd_make_request);
-	blk_queue_max_hw_sectors(brd->brd_queue, 1024);
-	blk_queue_bounce_limit(brd->brd_queue, BLK_BOUNCE_ANY);
+	blk_queue_make_request(pbrd->pbrd_queue, pbrd_make_request);
+	blk_queue_max_hw_sectors(pbrd->pbrd_queue, 1024);
+	blk_queue_bounce_limit(pbrd->pbrd_queue, BLK_BOUNCE_ANY);
 
 	/* This is so fdisk will align partitions on 4k, because of
 	 * direct_access API needing 4k alignment, returning a PFN
@@ -506,80 +509,80 @@ static struct brd_device *brd_alloc(int i)
 	 *  otherwise fdisk will align on 1M. Regardless this call
 	 *  is harmless)
 	 */
-	blk_queue_physical_block_size(brd->brd_queue, PAGE_SIZE);
+	blk_queue_physical_block_size(pbrd->pbrd_queue, PAGE_SIZE);
 
-	brd->brd_queue->limits.discard_granularity = PAGE_SIZE;
-	blk_queue_max_discard_sectors(brd->brd_queue, UINT_MAX);
-	brd->brd_queue->limits.discard_zeroes_data = 1;
-	queue_flag_set_unlocked(QUEUE_FLAG_DISCARD, brd->brd_queue);
+	pbrd->pbrd_queue->limits.discard_granularity = PAGE_SIZE;
+	blk_queue_max_discard_sectors(pbrd->pbrd_queue, UINT_MAX);
+	pbrd->pbrd_queue->limits.discard_zeroes_data = 1;
+	queue_flag_set_unlocked(QUEUE_FLAG_DISCARD, pbrd->pbrd_queue);
 
-	disk = brd->brd_disk = alloc_disk(max_part);
+	disk = pbrd->pbrd_disk = alloc_disk(max_part);
 	if (!disk)
 		goto out_free_queue;
 	disk->major		= RAMDISK_MAJOR;
 	disk->first_minor	= i * max_part;
-	disk->fops		= &brd_fops;
-	disk->private_data	= brd;
-	disk->queue		= brd->brd_queue;
+	disk->fops		= &pbrd_fops;
+	disk->private_data	= pbrd;
+	disk->queue		= pbrd->pbrd_queue;
 	disk->flags		= GENHD_FL_EXT_DEVT;
-	sprintf(disk->disk_name, "ram%d", i);
+	sprintf(disk->disk_name, "pram%d", i);
 	set_capacity(disk, rd_size * 2);
 
-	return brd;
+	return pbrd;
 
 out_free_queue:
-	blk_cleanup_queue(brd->brd_queue);
+	blk_cleanup_queue(pbrd->pbrd_queue);
 out_free_dev:
-	kfree(brd);
+	kfree(pbrd);
 out:
 	return NULL;
 }
 
-static void brd_free(struct brd_device *brd)
+static void pbrd_free(struct pbrd_device *pbrd)
 {
-	put_disk(brd->brd_disk);
-	blk_cleanup_queue(brd->brd_queue);
-	brd_free_pages(brd);
-	kfree(brd);
+	put_disk(pbrd->pbrd_disk);
+	blk_cleanup_queue(pbrd->pbrd_queue);
+	pbrd_free_pages(pbrd);
+	kfree(pbrd);
 }
 
-static struct brd_device *brd_init_one(int i, bool *new)
+static struct pbrd_device *pbrd_init_one(int i, bool *new)
 {
-	struct brd_device *brd;
+	struct pbrd_device *pbrd;
 
 	*new = false;
-	list_for_each_entry(brd, &brd_devices, brd_list) {
-		if (brd->brd_number == i)
+	list_for_each_entry(pbrd, &pbrd_devices, pbrd_list) {
+		if (pbrd->pbrd_number == i)
 			goto out;
 	}
 
-	brd = brd_alloc(i);
-	if (brd) {
-		add_disk(brd->brd_disk);
-		list_add_tail(&brd->brd_list, &brd_devices);
+	pbrd = pbrd_alloc(i);
+	if (pbrd) {
+		add_disk(pbrd->pbrd_disk);
+		list_add_tail(&pbrd->pbrd_list, &pbrd_devices);
 	}
 	*new = true;
 out:
-	return brd;
+	return pbrd;
 }
 
-static void brd_del_one(struct brd_device *brd)
+static void pbrd_del_one(struct pbrd_device *pbrd)
 {
-	list_del(&brd->brd_list);
-	del_gendisk(brd->brd_disk);
-	brd_free(brd);
+	list_del(&pbrd->pbrd_list);
+	del_gendisk(pbrd->pbrd_disk);
+	pbrd_free(pbrd);
 }
 
-static struct kobject *brd_probe(dev_t dev, int *part, void *data)
+static struct kobject *pbrd_probe(dev_t dev, int *part, void *data)
 {
-	struct brd_device *brd;
+	struct pbrd_device *pbrd;
 	struct kobject *kobj;
 	bool new;
 
-	mutex_lock(&brd_devices_mutex);
-	brd = brd_init_one(MINOR(dev) / max_part, &new);
-	kobj = brd ? get_disk(brd->brd_disk) : NULL;
-	mutex_unlock(&brd_devices_mutex);
+	mutex_lock(&pbrd_devices_mutex);
+	pbrd = pbrd_init_one(MINOR(dev) / max_part, &new);
+	kobj = pbrd ? get_disk(pbrd->pbrd_disk) : NULL;
+	mutex_unlock(&pbrd_devices_mutex);
 
 	if (new)
 		*part = 0;
@@ -587,18 +590,18 @@ static struct kobject *brd_probe(dev_t dev, int *part, void *data)
 	return kobj;
 }
 
-static int __init brd_init(void)
+static int __init pbrd_init(void)
 {
-	struct brd_device *brd, *next;
+	struct pbrd_device *pbrd, *next;
 	int i;
 
 	/*
-	 * brd module now has a feature to instantiate underlying device
+	 * pbrd module now has a feature to instantiate underlying device
 	 * structure on-demand, provided that there is an access dev node.
 	 *
 	 * (1) if rd_nr is specified, create that many upfront. else
-	 *     it defaults to CONFIG_BLK_DEV_RAM_COUNT
-	 * (2) User can further extend brd devices by create dev node themselves
+	 *     it defaults to CONFIG_BLK_DEV_PRAMDISK_COUNT
+	 * (2) User can further extend pbrd devices by create dev node themselves
 	 *     and have kernel automatically instantiate actual device
 	 *     on-demand. Example:
 	 *		mknod /path/devnod_name b 1 X	# 1 is the rd major
@@ -614,47 +617,47 @@ static int __init brd_init(void)
 		max_part = 1;
 
 	for (i = 0; i < rd_nr; i++) {
-		brd = brd_alloc(i);
-		if (!brd)
+		pbrd = pbrd_alloc(i);
+		if (!pbrd)
 			goto out_free;
-		list_add_tail(&brd->brd_list, &brd_devices);
+		list_add_tail(&pbrd->pbrd_list, &pbrd_devices);
 	}
 
 	/* point of no return */
 
-	list_for_each_entry(brd, &brd_devices, brd_list)
-		add_disk(brd->brd_disk);
+	list_for_each_entry(pbrd, &pbrd_devices, pbrd_list)
+		add_disk(pbrd->pbrd_disk);
 
 	blk_register_region(MKDEV(RAMDISK_MAJOR, 0), 1UL << MINORBITS,
-				  THIS_MODULE, brd_probe, NULL, NULL);
+				  THIS_MODULE, pbrd_probe, NULL, NULL);
 
-	pr_info("brd: module loaded\n");
+	pr_info("pbrd: module loaded\n");
 	return 0;
 
 out_free:
-	list_for_each_entry_safe(brd, next, &brd_devices, brd_list) {
-		list_del(&brd->brd_list);
-		brd_free(brd);
+	list_for_each_entry_safe(pbrd, next, &pbrd_devices, pbrd_list) {
+		list_del(&pbrd->pbrd_list);
+		pbrd_free(pbrd);
 	}
 	unregister_blkdev(RAMDISK_MAJOR, "ramdisk");
 
-	pr_info("brd: module NOT loaded !!!\n");
+	pr_info("pbrd: module NOT loaded !!!\n");
 	return -ENOMEM;
 }
 
-static void __exit brd_exit(void)
+static void __exit pbrd_exit(void)
 {
-	struct brd_device *brd, *next;
+	struct pbrd_device *pbrd, *next;
 
-	list_for_each_entry_safe(brd, next, &brd_devices, brd_list)
-		brd_del_one(brd);
+	list_for_each_entry_safe(pbrd, next, &pbrd_devices, pbrd_list)
+		pbrd_del_one(pbrd);
 
 	blk_unregister_region(MKDEV(RAMDISK_MAJOR, 0), 1UL << MINORBITS);
 	unregister_blkdev(RAMDISK_MAJOR, "ramdisk");
 
-	pr_info("brd: module unloaded\n");
+	pr_info("pbrd: module unloaded\n");
 }
 
-module_init(brd_init);
-module_exit(brd_exit);
+module_init(pbrd_init);
+module_exit(pbrd_exit);
 

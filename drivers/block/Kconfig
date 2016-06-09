@@ -393,6 +393,26 @@ config BLK_DEV_RAM_DAX
 	  and will prevent RAM block device backing store memory from being
 	  allocated from highmem (only a problem for highmem systems).
 
+config BLK_DEV_PRAMDISK
+	tristate "Persistent RAM block device support"
+	---help---
+	 PM Buddy! 
+
+config BLK_DEV_PRAMDISK_COUNT
+	int "Default number of PRAM disks"
+	default "1"
+	depends on BLK_DEV_PRAMDISK
+
+config BLK_DEV_PRAMDISK_SIZE
+	int "Default RAM disk size (kbytes)"
+	depends on BLK_DEV_PRAMDISK
+	default "15728640"
+
+config BLK_DEV_PRAMDISK_DAX
+	bool "Support Direct Access (DAX) to RAM block devices"
+	depends on BLK_DEV_PRAMDISK && FS_DAX
+	default n
+
 config CDROM_PKTCDVD
 	tristate "Packet writing on CD/DVD media"
 	depends on !UML

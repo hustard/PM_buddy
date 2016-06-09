@@ -406,7 +406,7 @@ config BLK_DEV_PRAMDISK_COUNT
 config BLK_DEV_PRAMDISK_SIZE
 	int "Default RAM disk size (kbytes)"
 	depends on BLK_DEV_PRAMDISK
-	default "15728640"
+	default "19922944"
 
 config BLK_DEV_PRAMDISK_DAX
 	bool "Support Direct Access (DAX) to RAM block devices"

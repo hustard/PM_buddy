@@ -543,6 +543,11 @@ enum zone_flags {
 	ZONE_FAIR_DEPLETED,		/* fair zone policy batch depleted */
 };
 
+static inline unsigned long zone_start_pfn(const struct zone *zone)
+{
+	return zone->zone_start_pfn;
+}
+
 static inline unsigned long zone_end_pfn(const struct zone *zone)
 {
 	return zone->zone_start_pfn + zone->spanned_pages;

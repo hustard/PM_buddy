@@ -33,6 +33,8 @@
 #define E820_NVS	4
 #define E820_UNUSABLE	5
 #define E820_PMEM	7
+#define E820_PMMIGRATE	8
+#define E820_PMONLY	9
 
 /*
  * This is a non-standardized way to represent ADR or NVDIMM regions that

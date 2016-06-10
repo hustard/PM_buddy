@@ -5866,7 +5866,7 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
 				max(max_zone_pfn[i], arch_zone_lowest_possible_pfn[i]);
 		} else if (i == ZONE_PMONLY){
 			arch_zone_lowest_possible_pfn[i] =
-				arch_zone_highest_possible_pfn[i-3];
+				arch_zone_highest_possible_pfn[i-1];
 			arch_zone_highest_possible_pfn[i] =
 				max(max_zone_pfn[i], arch_zone_lowest_possible_pfn[i]);
 		} else {

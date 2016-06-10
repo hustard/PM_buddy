@@ -153,6 +153,12 @@ static void __init e820_print_type(u32 type)
 	case E820_PRAM:
 		printk(KERN_CONT "persistent (type %u)", type);
 		break;
+	case E820_PMMIGRATE:
+		printk(KERN_CONT "persistent (type %u)", type);
+		break;
+	case E820_PMONLY:
+		printk(KERN_CONT "persistent (type %u)", type);
+		break;
 	default:
 		printk(KERN_CONT "type %u", type);
 		break;
@@ -768,7 +774,8 @@ static unsigned long __init e820_end_pfn(unsigned long limit_pfn)
 		 * Persistent memory is accounted as ram for purposes of
 		 * establishing max_pfn and mem_map.
 		 */
-		if (ei->type != E820_RAM && ei->type != E820_PRAM)
+		if (ei->type != E820_RAM && ei->type != E820_PRAM
+				&& ei->type != E820_PMONLY && ei->type != E820_PMMIGRATE)
 			continue;
 
 		start_pfn = ei->addr >> PAGE_SHIFT;
@@ -878,6 +885,12 @@ static int __init parse_memmap_one(char *p)
 	} else if (*p == '!') {
 		start_at = memparse(p+1, &p);
 		e820_add_region(start_at, mem_size, E820_PRAM);
+	} else if (*p == '%') {
+		start_at = memparse(p+1, &p);
+		e820_add_region(start_at, mem_size, E820_PMONLY);
+		mem_size = memparse(p+1, &p);
+		start_at = memparse(p+1, &p);
+		e820_add_region(start_at, mem_size, E820_PMMIGRATE);
 	} else
 		e820_remove_range(mem_size, ULLONG_MAX - mem_size, E820_RAM, 1);
 
@@ -921,6 +934,8 @@ static const char *e820_type_to_string(int e820_type)
 	case E820_UNUSABLE:	return "Unusable memory";
 	case E820_PRAM: return "Persistent Memory (legacy)";
 	case E820_PMEM: return "Persistent Memory";
+	case E820_PMMIGRATE: return "Persistent Memory (8)";
+	case E820_PMONLY: return "Persistent Memory (9)";
 	default:	return "reserved";
 	}
 }
@@ -1111,8 +1126,11 @@ void __init memblock_x86_fill(void)
 		if (end != (resource_size_t)end)
 			continue;
 
-		if (ei->type != E820_RAM && ei->type != E820_RESERVED_KERN)
+		if (ei->type != E820_RAM && ei->type != E820_RESERVED_KERN
+				&& ei->type != E820_PMONLY && ei->type != E820_PMMIGRATE)
 			continue;
+//		if (ei->type != E820_RAM && ei->type != E820_RESERVED_KERN)
+//			continue;
 
 		memblock_add(ei->addr, ei->size);
 	}

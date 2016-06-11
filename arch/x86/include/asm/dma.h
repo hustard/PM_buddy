@@ -77,7 +77,7 @@
 
 #define MAX_NORMAL_PFN ((5UL * 1024 * 1024 * 1024) >> PAGE_SHIFT)
 
-#define MAX_PMMIGRATE_PFN ((9UL * 1024 * 1024 * 1024) >> PAGE_SHIFT)
+#define MAX_PMMIGRATE_PFN ((13UL * 1024 * 1024 * 1024) >> PAGE_SHIFT)
 
 #ifdef CONFIG_X86_32
 /* The maximum address that we can perform a DMA transfer to on this platform */

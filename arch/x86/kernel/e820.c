@@ -954,6 +954,8 @@ static bool do_mark_busy(u32 type, struct resource *res)
 	case E820_RESERVED:
 	case E820_PRAM:
 	case E820_PMEM:
+	case E820_PMMIGRATE:
+	case E820_PMONLY:
 		return false;
 	default:
 		return true;

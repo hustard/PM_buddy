@@ -1553,8 +1553,6 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			}
 		}
 
-//		if(page_zonenum(page) == 5)
-//			printk("pmonly page alloc migratetype %d, order %d\n", migratetype, page_private(page));
 
 		if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_NORMAL) {
 			set_page_zone(page, ZONE_NORMAL);
@@ -1563,6 +1561,9 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			set_page_zone(page, ZONE_PMONLY);
 			set_pcppage_migratetype(page, migratetype);
 		}
+
+//		if(page_zonenum(page) == 5)
+//			printk("pmonly page alloc migratetype %d, order %d\n", migratetype, page_private(page));
 
 		return page;
 	}

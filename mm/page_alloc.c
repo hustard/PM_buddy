@@ -68,6 +68,16 @@
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
 #include "internal.h"
+#include <linux/ktime.h>
+
+//ktime_t alloc_start, alloc_end;
+//ktime_t free_start, free_end;
+//s64 insert_free_time = 0;
+//s64 insert_alloc_time = 0;
+//s64 total_free_time = 0;
+//s64 total_alloc_time = 0;
+//s64 total_alloc_count = 0;
+//s64 total_free_count = 0;
 
 /* prevent >1 _updater_ of zone percpu pageset ->high and ->batch fields */
 static DEFINE_MUTEX(pcp_batch_high_lock);
@@ -756,6 +766,9 @@ done_merging:
 	//hustard
 	if(page_to_pfn(page) > zone_end_pfn(zone) && page_zonenum(page) == 2 
 			&& migratetype == 1 && page_private(page) == MAX_ORDER - 1){
+		
+//		free_start = ktime_get();
+		
 		pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
 		pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
 		list_add(&page->lru, &pmigrate_area->free_list[migratetype]);
@@ -765,8 +778,17 @@ done_merging:
 		__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
 		set_page_zone(page, ZONE_PMMIGRATE);
 		set_pcppage_migratetype(page, 1);
+	
+//		total_free_count++;
+//		free_end = ktime_get();
+//		insert_free_time = ktime_to_ns(ktime_sub(free_end, free_start));
+//		total_free_time += insert_free_time;
+//		printk("free count %lld, total time %lld\n", total_free_count, total_free_time);
 	} else if(page_to_pfn(page) < zone_start_pfn(zone) && page_zonenum(page) == 5 
 			&& migratetype == 1 && page_private(page) == MAX_ORDER - 1){
+	
+//		free_start = ktime_get();
+		
 		pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
 		pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
 		list_add(&page->lru, &pmigrate_area->free_list[1]);
@@ -776,8 +798,16 @@ done_merging:
 		__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
 		set_page_zone(page, ZONE_PMMIGRATE);
 		set_pcppage_migratetype(page, 1);
+	
+//		total_free_count++;
+//		free_end = ktime_get();
+//		insert_free_time = ktime_to_ns(ktime_sub(free_end, free_start));
+//		total_free_time += insert_free_time;
+//		printk("free count %lld, total time %lld\n", total_free_count, total_free_time);
 	} else
 		list_add(&page->lru, &zone->free_area[order].free_list[migratetype]);
+
+	
 out:
 //	if(page_zonenum(page) == 5)
 //		printk("pmonly page free migratetype %d, order %d\n", migratetype, page_private(page));
@@ -1516,8 +1546,11 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 		expand(zone, page, order, current_order, area, migratetype);
 		set_pcppage_migratetype(page, migratetype);
 
+
 		//hustard
 		if(page_zonenum(page) == 2 && max_area->nr_free < 50 && migratetype == 1) {
+//			alloc_start = ktime_get();
+			
 			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
 			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
 			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
@@ -1533,8 +1566,17 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				max_area->nr_free++;
 				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
 				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+			
+//				total_alloc_count++;
+//				alloc_end = ktime_get();
+//				insert_alloc_time = ktime_to_ns(ktime_sub(alloc_end, alloc_start));
+//				total_alloc_time += insert_alloc_time;
+//				printk("alloc count %lld, total time %lld\n", total_alloc_count, total_alloc_time);
 			}
 		} else if(page_zonenum(page) == 5 && max_area->nr_free < 100 && migratetype == 0) {
+		
+//			alloc_start = ktime_get();
+			
 			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
 			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
 			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
@@ -1550,9 +1592,14 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 				max_area->nr_free++;
 				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
 				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+				
+//				total_alloc_count++;
+//				alloc_end = ktime_get();
+//				insert_alloc_time = ktime_to_ns(ktime_sub(alloc_end, alloc_start));
+//				total_alloc_time += insert_alloc_time;
+//				printk("alloc count %lld, total time %lld\n", total_alloc_count, total_alloc_time);
 			}
 		}
-
 
 		if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_NORMAL) {
 			set_page_zone(page, ZONE_NORMAL);
@@ -1562,6 +1609,7 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 			set_pcppage_migratetype(page, migratetype);
 		}
 
+			
 //		if(page_zonenum(page) == 5)
 //			printk("pmonly page alloc migratetype %d, order %d\n", migratetype, page_private(page));
 

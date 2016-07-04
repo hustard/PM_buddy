@@ -48,6 +48,7 @@
 })
 
 #elif defined(CONFIG_SPARSEMEM_VMEMMAP)
+//hit this macro
 
 /* memmap is virtually contiguous.  */
 #define __pfn_to_page(pfn)	(vmemmap + (pfn))

@@ -73,6 +73,13 @@
 
 #include "internal.h"
 
+//#include <linux/ktime.h>
+//
+//ktime_t alloc_start, alloc_end;
+//s64 insert_alloc_time = 0;
+//s64 total_alloc_time = 0;
+//s64 total_alloc_count = 0;
+
 #ifdef LAST_CPUPID_NOT_IN_PAGE_FLAGS
 #warning Unfortunate NUMA and NUMA Balancing config, growing page-frame for last_cpupid.
 #endif
@@ -2500,6 +2507,7 @@ static int do_swap_page(struct mm_struct *mm, struct vm_area_struct *vma,
 	int exclusive = 0;
 	int ret = 0;
 
+
 	if (!pte_unmap_same(mm, pmd, page_table, orig_pte))
 		goto out;
 
@@ -2518,6 +2526,7 @@ static int do_swap_page(struct mm_struct *mm, struct vm_area_struct *vma,
 	delayacct_set_flag(DELAYACCT_PF_SWAPIN);
 	page = lookup_swap_cache(entry);
 	if (!page) {
+//		alloc_start = ktime_get();
 		page = swapin_readahead(entry,
 					GFP_HIGHUSER_MOVABLE, vma, address);
 		if (!page) {
@@ -2536,6 +2545,14 @@ static int do_swap_page(struct mm_struct *mm, struct vm_area_struct *vma,
 		ret = VM_FAULT_MAJOR;
 		count_vm_event(PGMAJFAULT);
 		mem_cgroup_count_vm_event(mm, PGMAJFAULT);
+
+//		total_alloc_count++;
+//		alloc_end = ktime_get();
+//		insert_alloc_time = ktime_to_ns(ktime_sub(alloc_end, alloc_start));
+//		total_alloc_time += insert_alloc_time;			
+//		printk("alloc count %lld, total time %lld\n", total_alloc_count, total_alloc_time);
+
+
 	} else if (PageHWPoison(page)) {
 		/*
 		 * hwpoisoned dirty swapcache pages are kept for killing
@@ -2663,6 +2680,8 @@ out_release:
 		unlock_page(swapcache);
 		page_cache_release(swapcache);
 	}
+
+	
 	return ret;
 }
 

@@ -55,6 +55,12 @@
 #include <linux/balloon_compaction.h>
 
 #include "internal.h"
+//#include <linux/ktime.h>
+//
+//ktime_t free_start, free_end;
+//s64 insert_free_time = 0;
+//s64 total_free_time = 0;
+//s64 total_free_count = 0;
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/vmscan.h>
@@ -2401,6 +2407,8 @@ static bool shrink_zone(struct zone *zone, struct scan_control *sc,
 	unsigned long nr_reclaimed, nr_scanned;
 	bool reclaimable = false;
 
+//	free_start = ktime_get();
+
 	do {
 		struct mem_cgroup *root = sc->target_mem_cgroup;
 		struct mem_cgroup_reclaim_cookie reclaim = {
@@ -2482,6 +2490,11 @@ static bool shrink_zone(struct zone *zone, struct scan_control *sc,
 
 	} while (should_continue_reclaim(zone, sc->nr_reclaimed - nr_reclaimed,
 					 sc->nr_scanned - nr_scanned, sc));
+//	total_free_count++;
+//	free_end = ktime_get();
+//	insert_free_time = ktime_to_ns(ktime_sub(free_end, free_start));
+//	total_free_time += insert_free_time;
+//	printk("free count %lld, total time %lld\n", total_free_count, total_free_time);
 
 	return reclaimable;
 }

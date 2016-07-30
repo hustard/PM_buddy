@@ -1392,6 +1392,7 @@ void * __init memblock_virt_alloc_try_nid(
 		     (u64)max_addr, (void *)_RET_IP_);
 	ptr = memblock_virt_alloc_internal(size, align,
 					   min_addr, max_addr, nid);
+	
 	if (ptr)
 		return ptr;
 

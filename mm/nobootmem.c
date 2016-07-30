@@ -357,6 +357,7 @@ static void * __init ___alloc_bootmem_node(pg_data_t *pgdat, unsigned long size,
 	void *ptr;
 
 	ptr = ___alloc_bootmem_node_nopanic(pgdat, size, align, goal, limit);
+
 	if (ptr)
 		return ptr;
 

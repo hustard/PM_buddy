@@ -3371,8 +3371,8 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	struct zoneref *preferred_zoneref;
 	struct page *page = NULL;
 	unsigned int cpuset_mems_cookie;
-///	int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET;
-	//hustard
+	
+	//int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET;
 	int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET|ALLOC_FAIR;
 	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
 	struct alloc_context ac = {
@@ -4721,13 +4721,18 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		 */
 		if (!(pfn & (pageblock_nr_pages - 1))) {
 			struct page *page = pfn_to_page(pfn);
-
+	
 			__init_single_page(page, pfn, zone, nid);
 			set_pageblock_migratetype(page, MIGRATE_MOVABLE);
-			//hustard
 		} else {
 			__init_single_pfn(pfn, zone, nid);
 		}
+
+		//hustard
+		if(pfn == start_pfn)
+			printk("[%lu], first page descriptor physics address %lx, [%lx], __pa %lx \n",zone, pfn_to_page(pfn), virt_to_phys(pfn_to_page(pfn)), __pa(pfn_to_page(pfn)));
+		else if(pfn == end_pfn - 1)
+			printk("last page descriptor physics address %lx, [%lx] __pa %lx \n",pfn_to_page(pfn), virt_to_phys(pfn_to_page(pfn)), __pa(pfn_to_page(pfn)));
 	}
 }
 
@@ -5319,7 +5324,12 @@ static void __init setup_usemap(struct pglist_data *pgdat,
 }
 #else
 static inline void setup_usemap(struct pglist_data *pgdat, struct zone *zone,
-				unsigned long zone_start_pfn, unsigned long zonesize) {}
+				unsigned long zone_start_pfn, unsigned long zonesize) {
+	//hustard
+	printk("setup usemap size for Sparsemem \n");
+
+	//allocate bootmem and del from present page
+}
 #endif /* CONFIG_SPARSEMEM */
 
 #ifdef CONFIG_HUGETLB_PAGE_SIZE_VARIABLE
@@ -5521,6 +5531,7 @@ static void __init_refok alloc_node_mem_map(struct pglist_data *pgdat)
 							       pgdat->node_id);
 		pgdat->node_mem_map = map + offset;
 	}
+
 #ifndef CONFIG_NEED_MULTIPLE_NODES
 	/*
 	 * With no DISCONTIG, the global mem_map is just set as node 0's

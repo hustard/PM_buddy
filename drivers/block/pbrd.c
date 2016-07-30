@@ -113,7 +113,7 @@ static struct page *pbrd_insert_page(struct pbrd_device *pbrd, sector_t sector)
 #endif
 
 	gfp_flags = gfp_flags & (~0x2U);
-	
+
 	page = alloc_page(gfp_flags);
 	if (!page)
 		return NULL;

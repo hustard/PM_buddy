@@ -394,6 +394,7 @@ void __init sparse_mem_maps_populate_node(struct page **map_map,
 	unsigned long size = sizeof(struct page) * PAGES_PER_SECTION;
 
 	map = alloc_remap(nodeid, size * map_count);
+
 	if (map) {
 		for (pnum = pnum_begin; pnum < pnum_end; pnum++) {
 			if (!present_section_nr(pnum))
@@ -408,6 +409,7 @@ void __init sparse_mem_maps_populate_node(struct page **map_map,
 	map = memblock_virt_alloc_try_nid(size * map_count,
 					  PAGE_SIZE, __pa(MAX_DMA_ADDRESS),
 					  BOOTMEM_ALLOC_ACCESSIBLE, nodeid);
+
 	if (map) {
 		for (pnum = pnum_begin; pnum < pnum_end; pnum++) {
 			if (!present_section_nr(pnum))
@@ -444,6 +446,23 @@ static void __init sparse_early_mem_maps_alloc_node(void *data,
 	struct page **map_map = (struct page **)data;
 	sparse_mem_maps_populate_node(map_map, pnum_begin, pnum_end,
 					 map_count, nodeid);
+
+	//hustard
+	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map, __pa(map_map), virt_to_phys(map_map));
+	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map[0], __pa(map_map[0]), virt_to_phys(map_map[0]));
+	printk("map_map map_count %llx, pnum_begin %llx, end %lx\n", map_count, pnum_begin, pnum_end);
+
+
+	printk("start_kernel_map: %lx\n", __START_KERNEL_map);
+	unsigned long x = (unsigned long)map_map[0];
+	unsigned long y = (unsigned long)map_map[0] - __START_KERNEL_map;
+	printk("y: %lx\n",y); 
+	printk("PAGE_OFFSET: %lx\n", PAGE_OFFSET);
+	printk("start_kernel_map - PAGE_OFFSET: %lx\n", __START_KERNEL_map - PAGE_OFFSET);
+	printk("phys_base: %lx\n", phys_base);
+	x = y + ((x > y) ? phys_base : (__START_KERNEL_map - PAGE_OFFSET));
+	printk("x: %lx\n",x); 
+
 }
 #else
 static struct page __init *sparse_early_mem_map_alloc(unsigned long pnum)
@@ -512,6 +531,7 @@ static void __init alloc_usemap_and_memmap(void (*alloc_func)
 		map_count = 1;
 	}
 	/* ok, last chunk */
+	printk("NR_MEM_SECTIONS %lu\n", NR_MEM_SECTIONS);
 	alloc_func(data, pnum_begin, NR_MEM_SECTIONS,
 						map_count, nodeid_begin);
 }

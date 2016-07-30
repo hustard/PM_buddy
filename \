@@ -258,13 +258,9 @@ struct page * __meminit sparse_mem_map_populate(unsigned long pnum, int nid)
 	start = (unsigned long)map;
 	end = (unsigned long)(map + PAGES_PER_SECTION);
 
-//	printk("pnum %lx, PAGE_PER_SECTION %lx, multipled %lx\n", pnum, PAGES_PER_SECTION, pnum*PAGES_PER_SECTION);
-//	printk("map ptr %lx, map end %lx, pa %lx, virt_to_phys %lx\n", map, end, __pa(map), virt_to_phys(map));
-//
 	if (vmemmap_populate(start, end, nid))
 		return NULL;
 
-//	printk("start ptr %lx, pa %lx, virt_to_phys %lx\n", start, __pa(start), virt_to_phys(start));
 	return map;
 }
 
@@ -285,7 +281,7 @@ void __init sparse_mem_maps_populate_node(struct page **map_map,
 	printk("vmemmap_buf_start %lx, %lx\n", MAX_DMA_ADDRESS, __pa(MAX_DMA_ADDRESS));
 	//hustard
 	printk("bootmem ptr %lx, pa %lx, virt_to_phys %lx\n", vmemmap_buf_start, __pa(vmemmap_buf_start), virt_to_phys(vmemmap_buf_start));
-	printk("bootmem size %llx\n", size*map_count);
+	printk("bootmem size %llx\n", map_count);
 
 	if (vmemmap_buf_start) {
 		vmemmap_buf = vmemmap_buf_start;

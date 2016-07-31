@@ -448,22 +448,22 @@ static void __init sparse_early_mem_maps_alloc_node(void *data,
 					 map_count, nodeid);
 
 	//hustard
-	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map, __pa(map_map), virt_to_phys(map_map));
-	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map[0], __pa(map_map[0]), 
-			__phys_to_pfn(virt_to_phys(map_map[0])));
+//	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map, __pa(map_map), virt_to_phys(map_map));
+//	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map[0], __pa(map_map[0]), virt_to_phys(map_map[0]));
+//	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", &map_map[0][0], __pa(&map_map[0][0]), virt_to_phys(&map_map[0][0]));
 //			virt_to_phys(__pfn_to_page(__phys_to_pfn(virt_to_phys(map_map[0])))));
-	printk("map_map map_count %llx, pnum_begin %llx, end %lx\n", map_count, pnum_begin, pnum_end);
+//	printk("map_map map_count %llx, pnum_begin %llx, end %lx\n", map_count, pnum_begin, pnum_end);
 
 
-	printk("start_kernel_map: %lx\n", __START_KERNEL_map);
-	unsigned long x = (unsigned long)map_map[0];
-	unsigned long y = (unsigned long)map_map[0] - __START_KERNEL_map;
-	printk("y: %lx\n",y); 
-	printk("PAGE_OFFSET: %lx\n", PAGE_OFFSET);
-	printk("start_kernel_map - PAGE_OFFSET: %lx\n", __START_KERNEL_map - PAGE_OFFSET);
-	printk("phys_base: %lx\n", phys_base);
-	x = y + ((x > y) ? phys_base : (__START_KERNEL_map - PAGE_OFFSET));
-	printk("x: %lx\n",x); 
+//	printk("start_kernel_map: %lx\n", __START_KERNEL_map);
+//	unsigned long x = (unsigned long)map_map[0];
+//	unsigned long y = (unsigned long)map_map[0] - __START_KERNEL_map;
+//	printk("y: %lx\n",y); 
+//	printk("PAGE_OFFSET: %lx\n", PAGE_OFFSET);
+//	printk("start_kernel_map - PAGE_OFFSET: %lx\n", __START_KERNEL_map - PAGE_OFFSET);
+//	printk("phys_base: %lx\n", phys_base);
+//	x = y + ((x > y) ? phys_base : (__START_KERNEL_map - PAGE_OFFSET));
+//	printk("x: %lx\n",x); 
 
 }
 #else

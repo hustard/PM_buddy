@@ -1322,6 +1322,9 @@ done:
 	ptr = phys_to_virt(alloc);
 	memset(ptr, 0, size);
 
+	printk("hustard: %llu bytes align=0x%llx nid=%d from=0x%llx max_addr=0x%llx, alloc=0x%llx, ptr=0x%llx\n",
+		     (u64)size, (u64)align, nid, (u64)min_addr, (u64)max_addr, alloc, ptr);
+
 	/*
 	 * The min_count is set to 0 so that bootmem allocated blocks
 	 * are never reported as leaks. This is because many of these blocks
@@ -1387,6 +1390,7 @@ void * __init memblock_virt_alloc_try_nid(
 {
 	void *ptr;
 
+	//hit this function
 	memblock_dbg("%s: %llu bytes align=0x%llx nid=%d from=0x%llx max_addr=0x%llx %pF\n",
 		     __func__, (u64)size, (u64)align, nid, (u64)min_addr,
 		     (u64)max_addr, (void *)_RET_IP_);

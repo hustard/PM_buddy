@@ -449,7 +449,9 @@ static void __init sparse_early_mem_maps_alloc_node(void *data,
 
 	//hustard
 	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map, __pa(map_map), virt_to_phys(map_map));
-	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map[0], __pa(map_map[0]), virt_to_phys(map_map[0]));
+	printk("map_map ptr %lx, pa %lx, virt_to_phys %lx\n", map_map[0], __pa(map_map[0]), 
+			__phys_to_pfn(virt_to_phys(map_map[0])));
+//			virt_to_phys(__pfn_to_page(__phys_to_pfn(virt_to_phys(map_map[0])))));
 	printk("map_map map_count %llx, pnum_begin %llx, end %lx\n", map_count, pnum_begin, pnum_end);
 
 

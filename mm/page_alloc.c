@@ -4735,10 +4735,10 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		}
 
 		//hustard
-		if(pfn == start_pfn)
-			printk("[%lu], first page descriptor physics address %lx, [%lx], __pa %lx \n",zone, pfn_to_page(pfn), virt_to_phys(pfn_to_page(pfn)), __pa(pfn_to_page(pfn)));
-		else if(pfn == end_pfn - 1)
-			printk("last page descriptor physics address %lx, [%lx] __pa %lx \n",pfn_to_page(pfn), virt_to_phys(pfn_to_page(pfn)), __pa(pfn_to_page(pfn)));
+//		if(pfn == start_pfn)
+//			printk("[%lu], first page descriptor physics address %lx, [%lx], __pa %lx \n",zone, pfn_to_page(pfn), virt_to_phys(pfn_to_page(pfn)), __pa(pfn_to_page(pfn)));
+//		else if(pfn == end_pfn - 1)
+//			printk("last page descriptor physics address %lx, [%lx] __pa %lx \n",pfn_to_page(pfn), virt_to_phys(pfn_to_page(pfn)), __pa(pfn_to_page(pfn)));
 	}
 }
 
@@ -5331,9 +5331,6 @@ static void __init setup_usemap(struct pglist_data *pgdat,
 #else
 static inline void setup_usemap(struct pglist_data *pgdat, struct zone *zone,
 				unsigned long zone_start_pfn, unsigned long zonesize) {
-	//hustard
-	printk("setup usemap size for Sparsemem \n");
-
 	//allocate bootmem and del from present page
 }
 #endif /* CONFIG_SPARSEMEM */
@@ -5474,7 +5471,7 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat)
 
 		//hustard
 		printk(KERN_WARNING
-					"  %s zone: %lu pages managed_pages \n",
+					"hustard:  %s zone: %lu pages managed_pages \n",
 					zone_names[j], zone->managed_pages);
 
 #ifdef CONFIG_NUMA
@@ -5576,10 +5573,6 @@ void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 				  zones_size, zholes_size);
 
 	alloc_node_mem_map(pgdat);
-	//hustard
-//	printk("free_area_init_node: node %d, pgdat %08lx, node_mem_map %08lx\n",
-//		nid, (unsigned long)pgdat,
-//		(unsigned long)mem_map);
 
 #ifdef CONFIG_FLAT_NODE_MEM_MAP
 	printk(KERN_DEBUG "free_area_init_node: node %d, pgdat %08lx, node_mem_map %08lx\n",
@@ -5924,12 +5917,9 @@ void __init free_area_init_nodes(unsigned long *max_zone_pfn)
 	arch_zone_lowest_possible_pfn[0] = find_min_pfn_with_active_regions();
 	arch_zone_highest_possible_pfn[0] = max_zone_pfn[0];
 	for (i = 1; i < MAX_NR_ZONES; i++) {
-		//hustard
-		if (i == ZONE_MOVABLE){
-			printk("free_area_init_nodes_continuee %d\n",i);
+		if (i == ZONE_MOVABLE)
 			continue;
-		}
-		printk("free_area_init_nodess %d\n",i);
+		
 		if (i == ZONE_PMMIGRATE){
 			arch_zone_lowest_possible_pfn[i] =
 				arch_zone_highest_possible_pfn[i-2];

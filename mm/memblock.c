@@ -1322,8 +1322,11 @@ done:
 	ptr = phys_to_virt(alloc);
 	memset(ptr, 0, size);
 
-	printk("hustard: %llu bytes align=0x%llx nid=%d from=0x%llx max_addr=0x%llx, alloc=0x%llx, ptr=0x%llx\n",
+	if(debug_flag) {
+		printk("hustard: %llu bytes align=0x%llx nid=%d from=0x%llx max_addr=0x%llx, alloc=0x%llx, ptr=0x%llx\n",
 		     (u64)size, (u64)align, nid, (u64)min_addr, (u64)max_addr, alloc, ptr);
+		debug_flag = 0;
+	}
 
 	/*
 	 * The min_count is set to 0 so that bootmem allocated blocks

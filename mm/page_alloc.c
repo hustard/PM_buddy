@@ -2479,8 +2479,10 @@ static bool should_fail_alloc_page(gfp_t gfp_mask, unsigned int order)
 {
 	if (order < fail_page_alloc.min_order)
 		return false;
-	if (gfp_mask & __GFP_NOFAIL)
+	if (gfp_mask & __GFP_NOFAIL){
+		printk("here? \n");
 		return false;
+	}
 	if (fail_page_alloc.ignore_gfp_highmem && (gfp_mask & __GFP_HIGHMEM))
 		return false;
 	if (fail_page_alloc.ignore_gfp_reclaim &&
@@ -3387,8 +3389,8 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 
 	might_sleep_if(gfp_mask & __GFP_DIRECT_RECLAIM);
 
-	if (should_fail_alloc_page(gfp_mask, order))
-		return NULL;
+//	if (should_fail_alloc_page(gfp_mask, order))
+//		return NULL;
 
 	/*
 	 * Check the zones suitable for the gfp_mask contain at least one
@@ -3443,6 +3445,10 @@ retry_cpuset:
 		kmemcheck_pagealloc_alloc(page, order, gfp_mask);
 
 	trace_mm_page_alloc(page, order, alloc_mask, ac.migratetype);
+
+	//hustard
+	if (gfp_zone(gfp_mask) == 5 && should_fail_alloc_page(gfp_mask, order))
+		return NULL;
 
 out:
 	/*
@@ -5570,6 +5576,11 @@ void __paginginit free_area_init_node(int nid, unsigned long *zones_size,
 				  zones_size, zholes_size);
 
 	alloc_node_mem_map(pgdat);
+	//hustard
+//	printk("free_area_init_node: node %d, pgdat %08lx, node_mem_map %08lx\n",
+//		nid, (unsigned long)pgdat,
+//		(unsigned long)mem_map);
+
 #ifdef CONFIG_FLAT_NODE_MEM_MAP
 	printk(KERN_DEBUG "free_area_init_node: node %d, pgdat %08lx, node_mem_map %08lx\n",
 		nid, (unsigned long)pgdat,

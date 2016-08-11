@@ -15,6 +15,8 @@
 #include <linux/types.h>
 #include <linux/workqueue.h>
 
+//hustard
+extern int debug_flag;
 
 /*
  * Flags to pass to kmem_cache_create().

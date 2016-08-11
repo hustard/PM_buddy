@@ -41,6 +41,7 @@ static void * __init_refok __earlyonly_bootmem_alloc(int node,
 				unsigned long align,
 				unsigned long goal)
 {
+
 	return memblock_virt_alloc_try_nid(size, align, goal,
 					    BOOTMEM_ALLOC_ACCESSIBLE, node);
 }
@@ -48,9 +49,11 @@ static void * __init_refok __earlyonly_bootmem_alloc(int node,
 static void *vmemmap_buf;
 static void *vmemmap_buf_end;
 
+int debug_flag = 0;
 void * __meminit vmemmap_alloc_block(unsigned long size, int node)
 {
 	/* If the main allocator is up use that, fallback to bootmem. */
+
 	if (slab_is_available()) {
 		struct page *page;
 
@@ -278,13 +281,17 @@ void __init sparse_mem_maps_populate_node(struct page **map_map,
 	void *vmemmap_buf_start;
 
 	size = ALIGN(size, PMD_SIZE);
+	debug_flag = 1;
 	vmemmap_buf_start = __earlyonly_bootmem_alloc(nodeid, size * map_count,
 			 PMD_SIZE, __pa(MAX_DMA_ADDRESS));
 //			 PMD_SIZE, __pa(MAX_PMMIGRATE_ADDRESS));
 
+
+//	__earlyonly_bootmem_alloc(nodeid, size * map_count * 5, PMD_SIZE, __pa(MAX_PMMIGRATE_ADDRESS));
+
 	//hustard
-//	printk("vmemmap_buf_start %lx, %lx\n", MAX_DMA_ADDRESS, __pa(MAX_DMA_ADDRESS));
-	printk("vmemmap_buf_start %lx, %lx\n", MAX_PMMIGRATE_ADDRESS, __pa(MAX_PMMIGRATE_ADDRESS));
+	printk("vmemmap_buf_start %lx, %lx\n", MAX_DMA_ADDRESS, __pa(MAX_DMA_ADDRESS));
+//	printk("vmemmap_buf_start %lx, %lx\n", MAX_PMMIGRATE_ADDRESS, __pa(MAX_PMMIGRATE_ADDRESS));
 	//hustard
 	printk("bootmem ptr %lx, pa %lx, virt_to_phys %lx\n", vmemmap_buf_start, __pa(vmemmap_buf_start), virt_to_phys(vmemmap_buf_start));
 	printk("size * map_count %llx\n", size*map_count);

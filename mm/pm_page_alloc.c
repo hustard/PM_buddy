@@ -171,7 +171,7 @@ static int __meminit pmlog_block_populate_hugepage(unsigned long start, unsigned
 			void *p;
 
 			p = pmlog_alloc_block_buf(PMD_SIZE, node);
-			printk("hustard: %016lx \n", p);
+//			printk("hustard: %016lx \n", p);
 			//hustard p is ffffea000000~
 			if (p) {
 				pte_t entry;
@@ -181,8 +181,8 @@ static int __meminit pmlog_block_populate_hugepage(unsigned long start, unsigned
 						PAGE_KERNEL_LARGE);
 				set_pmd(pmd, __pmd(pte_val(entry)));
 
-				printk("hustard: pte entry %016lx \n", entry);
-				printk("hustard: __(p) %016lx \n", __pa(p));
+//				printk("hustard: pte entry %016lx \n", entry);
+//				printk("hustard: __(p) %016lx \n", __pa(p));
 				/* check to see if we have contiguous blocks */
 				if (p_end != p || node_start != node) {
 					if (p_start)
@@ -218,7 +218,7 @@ struct pmlog_entry * __meminit pmlog_block_populate(unsigned long bnum, int nid)
 	ple_block = idx_to_ple(bnum * PMLE_PER_HUGEPAGE);
 	start = (unsigned long)ple_block;
 	end = (unsigned long)(ple_block + PMLE_PER_HUGEPAGE);
-	printk("\nmap ptr *%016lx, map start %016lx, end %016lx\n", ple_block, start, end);
+//	printk("\nmap ptr *%016lx, map start %016lx, end %016lx\n", ple_block, start, end);
 
 	err = pmlog_block_populate_hugepage(start, end, 0);
 
@@ -232,7 +232,6 @@ struct pmlog_entry * __meminit pmlog_block_populate(unsigned long bnum, int nid)
 
 void __init pmlog_blocks_populate(struct page **pmlog_entry)
 {
-	unsigned long lenum;
 	unsigned long bnum;
 	unsigned long size = sizeof(struct pmlog_entry) * NR_PMBUDDY_ENTRYS;
 	void *pmlog_buf_start;
@@ -280,6 +279,7 @@ void __init pmlog_blocks_populate(struct page **pmlog_entry)
 void __init pmbuddy_init(void){
 
 	int size;
+	unsigned long lenum;
 	struct pmlog_entry **entry_node;
 	struct pmlog_entry *base_entry;
 	struct pmlog_entry *iter_entry;
@@ -296,15 +296,31 @@ void __init pmbuddy_init(void){
 
 	pmlog_blocks_populate((void *)entry_node);
 
-	base_entry = (struct pmlog_entry *) entry_node;
-	for (lenum = 0; lenum < NR_PMBUDDY_ENTRYS; lenum++) {
-		iter_entry = base_entry + 0;
-		if (!entry)
+//	base_entry = (struct pmlog_entry *) entry_node;
+//	for (lenum = 0; lenum < NR_PMBUDDY_ENTRYS; lenum++) {
+//		iter_entry = base_entry + lenum;
+//		if (!iter_entry)
+//			panic("can not allocate pmbuddy %lu log entry\n", lenum);
+//		else {
+//			iter_entry->addr = 0xFFFFFFFF;
+//			iter_entry->zone_num = 0xFFFFFFFF;
+//			iter_entry->page_order = 0xFF;
+//		}
+//	}
+
+	base_entry = (struct pmlog_entry *) entry_node[0];
+	printk("entry_node %016lx, entry_node[0] %016lx(%016lx)\n", entry_node, entry_node[0], *entry_node[0]);
+	
+	for (lenum = 0; lenum < 10; lenum++) {
+		iter_entry = base_entry + lenum;
+		printk("inter entry %016lx(%016lx)\n", iter_entry, *iter_entry);
+		if (!iter_entry)
 			panic("can not allocate pmbuddy %lu log entry\n", lenum);
 		else {
-			iter_entry->addr = 0xFFFFFFFF;
-			iter_entry->zone_num = 0xFFFFFFFF;
-			iter_entry->page_order = 0xFF;
+			iter_entry->addr = 0xAAAAAAAA;
+			iter_entry->zone_num = 0xBBBBBBBB;
+			iter_entry->page_order = 0xCC;
+			iter_entry->commit = 0xDD;
 		}
 	}
 

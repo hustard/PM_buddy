@@ -264,7 +264,7 @@ struct page * __meminit sparse_mem_map_populate(unsigned long pnum, int nid)
 	end = (unsigned long)(map + PAGES_PER_SECTION);
 
 //	printk("pnum %lx, PAGE_PER_SECTION %lx, multipled %lx\n", pnum, PAGES_PER_SECTION, pnum*PAGES_PER_SECTION);
-	printk("map ptr *%016lx, map start %016lx, end %016lx, nid %d\n", map, start, end, nid);
+//	printk("map ptr *%016lx, map start %016lx, end %016lx, nid %d\n", map, start, end, nid);
 //
 	if (vmemmap_populate(start, end, nid)) //hustard should be return 1
 		return NULL;

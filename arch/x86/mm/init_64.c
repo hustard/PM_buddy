@@ -1275,7 +1275,7 @@ static int __meminit vmemmap_populate_hugepages(unsigned long start,
 			void *p;
 
 			p = __vmemmap_alloc_block_buf(PMD_SIZE, node, altmap);
-			printk("hustard: %016lx \n", p);
+//			printk("hustard: %016lx \n", p);
 			//hustard p is ffffea000000~
 			if (p) {
 				pte_t entry;
@@ -1285,8 +1285,8 @@ static int __meminit vmemmap_populate_hugepages(unsigned long start,
 						PAGE_KERNEL_LARGE);
 				set_pmd(pmd, __pmd(pte_val(entry)));
 
-				printk("hustard: pte entry %016lx \n", entry);
-				printk("hustard: __(p) %016lx \n", __pa(p));
+//				printk("hustard: pte entry %016lx \n", entry);
+//				printk("hustard: __(p) %016lx \n", __pa(p));
 				/* check to see if we have contiguous blocks */
 				if (p_end != p || node_start != node) {
 					if (p_start)
@@ -1321,22 +1321,22 @@ int __meminit vmemmap_populate(unsigned long start, unsigned long end, int node)
 //hustard
 //
 //
-	printk("altmap address %016lx \n\n", altmap);
-	if (cpu_has_pse){
+//	printk("altmap address %016lx \n\n", altmap);
+	if (cpu_has_pse){//hit
 		err = vmemmap_populate_hugepages(start, end, node, altmap);
-		printk("hit 1\n");
+//		printk("hit 1\n");
 	}
 	else if (altmap) {
-		printk("hit 2\n");
+//		printk("hit 2\n");
 		pr_err_once("%s: no cpu support for altmap allocations\n",
 				__func__);
 		err = -ENOMEM;
 	} else {
-		printk("hit 3\n");
+//		printk("hit 3\n");
 		err = vmemmap_populate_basepages(start, end, node);
 	}
-	if (!err){
-		printk("hit 4\n");
+	if (!err){//hit
+//		printk("hit 4\n");
 		sync_global_pgds(start, end - 1, 0);
 	}
 	return err;

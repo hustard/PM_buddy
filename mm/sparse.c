@@ -511,12 +511,13 @@ static void __init alloc_usemap_and_memmap(void (*alloc_func)
 		pnum_begin = pnum;
 		break;
 	}
+	printk("hustard: pmum_begin %lu\n", pnum_begin);
 	map_count = 1;
 	for (pnum = pnum_begin + 1; pnum < NR_MEM_SECTIONS; pnum++) {
 		struct mem_section *ms;
 		int nodeid;
 
-		if (!present_section_nr(pnum))
+		if (!present_section_nr(pnum)) 
 			continue;
 		ms = __nr_to_section(pnum);
 		nodeid = sparse_early_nid(ms);
@@ -524,6 +525,8 @@ static void __init alloc_usemap_and_memmap(void (*alloc_func)
 			map_count++;
 			continue;
 		}
+		//hustard didn't perform below code in loop
+		
 		/* ok, we need to take cake of from pnum_begin to pnum - 1*/
 		alloc_func(data, pnum_begin, pnum,
 						map_count, nodeid_begin);
@@ -533,7 +536,6 @@ static void __init alloc_usemap_and_memmap(void (*alloc_func)
 		map_count = 1;
 	}
 	/* ok, last chunk */
-	printk("NR_MEM_SECTIONS %lu\n", NR_MEM_SECTIONS);
 	alloc_func(data, pnum_begin, NR_MEM_SECTIONS,
 						map_count, nodeid_begin);
 }

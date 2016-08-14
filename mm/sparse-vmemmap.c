@@ -215,10 +215,12 @@ pgd_t * __meminit vmemmap_pgd_populate(unsigned long addr, int node)
 {
 	pgd_t *pgd = pgd_offset_k(addr);
 	if (pgd_none(*pgd)) {
+		printk("hustard: hit here??\n");
 		void *p = vmemmap_alloc_block(PAGE_SIZE, node);
 		if (!p)
 			return NULL;
 		pgd_populate(&init_mm, pgd, p);
+		printk("hustard: page populated??\n");
 	}
 	return pgd;
 }
@@ -262,9 +264,9 @@ struct page * __meminit sparse_mem_map_populate(unsigned long pnum, int nid)
 	end = (unsigned long)(map + PAGES_PER_SECTION);
 
 //	printk("pnum %lx, PAGE_PER_SECTION %lx, multipled %lx\n", pnum, PAGES_PER_SECTION, pnum*PAGES_PER_SECTION);
-//	printk("map ptr %lx, map end %lx, pa %lx, virt_to_phys %lx\n", map, end, __pa(map), virt_to_phys(map));
+	printk("map ptr *%016lx, map start %016lx, end %016lx\n", map, start, end);
 //
-	if (vmemmap_populate(start, end, nid))
+	if (vmemmap_populate(start, end, nid)) //hustard should be return 1
 		return NULL;
 
 //	printk("start ptr %lx, pa %lx, virt_to_phys %lx\n", start, __pa(start), virt_to_phys(start));
@@ -297,18 +299,22 @@ void __init sparse_mem_maps_populate_node(struct page **map_map,
 	printk("size * map_count %llx\n", size*map_count);
 	printk("PAGES_PER_SECTION %llx, bootmem_alloc_accessible %lx\n", PAGES_PER_SECTION, BOOTMEM_ALLOC_ACCESSIBLE);
 
+	printk("pnum_begin %ld pnum_end %ld map_count %ld \n", pnum_begin, pnum_end, map_count);
+
 	if (vmemmap_buf_start) {
 		vmemmap_buf = vmemmap_buf_start;
 		vmemmap_buf_end = vmemmap_buf_start + size * map_count;
 	}
 
-	for (pnum = pnum_begin; pnum < pnum_end; pnum++) {
+	for (pnum = pnum_begin; pnum < pnum_end; pnum++) {//each section map_map allocation
 		struct mem_section *ms;
 
 		if (!present_section_nr(pnum))
 			continue;
 
 		map_map[pnum] = sparse_mem_map_populate(pnum, nodeid);
+		printk("pnum %ld map_map[pnum]* %016lx, map_map[pnum] %016lx\n\n",
+				pnum, &map_map[pnum], map_map[pnum]);
 		if (map_map[pnum])
 			continue;
 		ms = __nr_to_section(pnum);

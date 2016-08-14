@@ -1,51 +1,0 @@
-if &cp | set nocp | endif
-nmap  h
-let s:cpo_save=&cpo
-set cpo&vim
-nmap <NL> j
-nmap  k
-nmap  l
-map ,sei :set ai:set cindent:set smartindent
-map ,noi :set noai:set nocindent:set nosmartindent
-nnoremap <silent> \b :CommandTBuffer
-nnoremap <silent> \t :CommandT
-nmap gx <Plug>NetrwBrowseX
-nnoremap <silent> <Plug>NetrwBrowseX :call netrw#NetrwBrowseX(expand("<cWORD>"),0)
-nmap <F7> :SrcExplToggle
-nmap <F6> :Tlist
-nmap <F5> :NERDTreeToggle
-imap OS -
-imap Ol +
-imap OR *
-imap OQ /
-imap On .
-imap Op 0
-imap Oy 9
-imap Ox 8
-imap Ow 7
-imap Ov 6
-imap Ou 5
-imap Ot 4
-imap Os 3
-imap Or 2
-imap Oq 1
-let &cpo=s:cpo_save
-unlet s:cpo_save
-set autoindent
-set background=dark
-set backspace=indent,eol,start
-set cindent
-set fileencodings=ucs-bom,utf-8,default,latin1
-set helplang=en
-set hlsearch
-set nomodeline
-set mouse=a
-set printoptions=paper:a4
-set ruler
-set runtimepath=~/.vim,~/.vim/bundle/Vundle.vim,~/.vim/bundle/vim-fugitive,~/.vim/bundle/L9,~/.vim/bundle/command-t,~/.vim/bundle/plugin,~/.vim/bundle/sparkup/vim/,~/.vim/bundle/The-NERD-Tree,/var/lib/vim/addons,/usr/share/vim/vimfiles,/usr/share/vim/vim74,/usr/share/vim/vimfiles/after,/var/lib/vim/addons/after,~/.vim/after,~/.vim/bundle/Vundle.vim,~/.vim/bundle/Vundle.vim/after,~/.vim/bundle/vim-fugitive/after,~/.vim/bundle/L9/after,~/.vim/bundle/command-t/after,~/.vim/bundle/plugin/after,~/.vim/bundle/sparkup/vim//after,~/.vim/bundle/The-NERD-Tree/after
-set shiftwidth=4
-set smartindent
-set suffixes=.bak,~,.swp,.o,.info,.aux,.log,.dvi,.bbl,.blg,.brf,.cb,.ind,.idx,.ilg,.inx,.out,.toc
-set noswapfile
-set tabstop=4
-" vim: set ft=vim :

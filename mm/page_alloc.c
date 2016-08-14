@@ -1548,66 +1548,66 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 
 
 		//hustard
-		if(page_zonenum(page) == 2 && max_area->nr_free < 50 && migratetype == 1) {
-//			alloc_start = ktime_get();
-			
-			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
-			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
-			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
-				return page;
-			} else {
-				pmigrate_page = list_first_entry_or_null(&pmigrate_area->free_list[migratetype],
-						struct page, lru);
-				list_del(&pmigrate_page->lru);
-				set_page_zone(pmigrate_page, ZONE_NORMAL);
-				set_pcppage_migratetype(pmigrate_page, migratetype);
-				list_add_tail(&pmigrate_page->lru, &max_area->free_list[migratetype]);
-				pmigrate_area->nr_free--;
-				max_area->nr_free++;
-				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
-				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
-			
-//				total_alloc_count++;
-//				alloc_end = ktime_get();
-//				insert_alloc_time = ktime_to_ns(ktime_sub(alloc_end, alloc_start));
-//				total_alloc_time += insert_alloc_time;
-//				printk("alloc count %lld, total time %lld\n", total_alloc_count, total_alloc_time);
-			}
-		} else if(page_zonenum(page) == 5 && max_area->nr_free < 100 && migratetype == 0) {
-		
-//			alloc_start = ktime_get();
-			
-			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
-			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
-			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
-				return page;
-			} else {
-				pmigrate_page = list_first_entry_or_null(&pmigrate_area->free_list[1],
-						struct page, lru);
-				list_del(&pmigrate_page->lru);
-				set_page_zone(pmigrate_page, ZONE_PMONLY);
-				set_pcppage_migratetype(pmigrate_page, migratetype);
-				list_add_tail(&pmigrate_page->lru, &max_area->free_list[migratetype]);
-				pmigrate_area->nr_free--;
-				max_area->nr_free++;
-				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
-				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
-				
-//				total_alloc_count++;
-//				alloc_end = ktime_get();
-//				insert_alloc_time = ktime_to_ns(ktime_sub(alloc_end, alloc_start));
-//				total_alloc_time += insert_alloc_time;
-//				printk("alloc count %lld, total time %lld\n", total_alloc_count, total_alloc_time);
-			}
-		}
-
-		if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_NORMAL) {
-			set_page_zone(page, ZONE_NORMAL);
-			set_pcppage_migratetype(page, migratetype);
-		} else if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_PMONLY){
-			set_page_zone(page, ZONE_PMONLY);
-			set_pcppage_migratetype(page, migratetype);
-		}
+//		if(page_zonenum(page) == 2 && max_area->nr_free < 50 && migratetype == 1) {
+////			alloc_start = ktime_get();
+//			
+//			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+//			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
+//			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
+//				return page;
+//			} else {
+//				pmigrate_page = list_first_entry_or_null(&pmigrate_area->free_list[migratetype],
+//						struct page, lru);
+//				list_del(&pmigrate_page->lru);
+//				set_page_zone(pmigrate_page, ZONE_NORMAL);
+//				set_pcppage_migratetype(pmigrate_page, migratetype);
+//				list_add_tail(&pmigrate_page->lru, &max_area->free_list[migratetype]);
+//				pmigrate_area->nr_free--;
+//				max_area->nr_free++;
+//				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
+//				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+//			
+////				total_alloc_count++;
+////				alloc_end = ktime_get();
+////				insert_alloc_time = ktime_to_ns(ktime_sub(alloc_end, alloc_start));
+////				total_alloc_time += insert_alloc_time;
+////				printk("alloc count %lld, total time %lld\n", total_alloc_count, total_alloc_time);
+//			}
+//		} else if(page_zonenum(page) == 5 && max_area->nr_free < 100 && migratetype == 0) {
+//		
+////			alloc_start = ktime_get();
+//			
+//			pmigrate_zone = &NODE_DATA(page_to_nid(page))->node_zones[4];
+//			pmigrate_area = &pmigrate_zone->free_area[MAX_ORDER - 1];
+//			if(!pmigrate_area || pmigrate_area->nr_free < 1) {
+//				return page;
+//			} else {
+//				pmigrate_page = list_first_entry_or_null(&pmigrate_area->free_list[1],
+//						struct page, lru);
+//				list_del(&pmigrate_page->lru);
+//				set_page_zone(pmigrate_page, ZONE_PMONLY);
+//				set_pcppage_migratetype(pmigrate_page, migratetype);
+//				list_add_tail(&pmigrate_page->lru, &max_area->free_list[migratetype]);
+//				pmigrate_area->nr_free--;
+//				max_area->nr_free++;
+//				__mod_zone_page_state(zone, NR_FREE_PAGES, 1 << (MAX_ORDER - 1));
+//				__mod_zone_page_state(pmigrate_zone, NR_FREE_PAGES, -(1 << (MAX_ORDER - 1)));
+//				
+////				total_alloc_count++;
+////				alloc_end = ktime_get();
+////				insert_alloc_time = ktime_to_ns(ktime_sub(alloc_end, alloc_start));
+////				total_alloc_time += insert_alloc_time;
+////				printk("alloc count %lld, total time %lld\n", total_alloc_count, total_alloc_time);
+//			}
+//		}
+//
+//		if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_NORMAL) {
+//			set_page_zone(page, ZONE_NORMAL);
+//			set_pcppage_migratetype(page, migratetype);
+//		} else if(page_zonenum(page) & ZONE_PMMIGRATE && zone_id(zone) == ZONE_PMONLY){
+//			set_page_zone(page, ZONE_PMONLY);
+//			set_pcppage_migratetype(page, migratetype);
+//		}
 
 			
 //		if(page_zonenum(page) == 5)
@@ -4682,6 +4682,9 @@ void __meminit memmap_init_zone(unsigned long size, int nid, unsigned long zone,
 		unsigned long start_pfn, enum memmap_context context)
 {
 	struct vmem_altmap *altmap = to_vmem_altmap(__pfn_to_phys(start_pfn));
+//	printk("hustard: what is altmap address? %lx\n", altmap);
+//	altmap address return NULL because CONFIG_DEVICE_ZONE disabled
+//
 	unsigned long end_pfn = start_pfn + size;
 	pg_data_t *pgdat = NODE_DATA(nid);
 	unsigned long pfn;
@@ -5471,7 +5474,7 @@ static void __paginginit free_area_init_core(struct pglist_data *pgdat)
 
 		//hustard
 		printk(KERN_WARNING
-					"hustard:  %s zone: %lu pages managed_pages \n",
+					"%s zone: %lu pages managed_pages(hustard) \n",
 					zone_names[j], zone->managed_pages);
 
 #ifdef CONFIG_NUMA

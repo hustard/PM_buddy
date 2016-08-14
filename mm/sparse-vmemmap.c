@@ -49,7 +49,7 @@ static void * __init_refok __earlyonly_bootmem_alloc(int node,
 static void *vmemmap_buf;
 static void *vmemmap_buf_end;
 
-int debug_flag = 0;
+int debug_flag = 1;
 void * __meminit vmemmap_alloc_block(unsigned long size, int node)
 {
 	/* If the main allocator is up use that, fallback to bootmem. */
@@ -264,7 +264,7 @@ struct page * __meminit sparse_mem_map_populate(unsigned long pnum, int nid)
 	end = (unsigned long)(map + PAGES_PER_SECTION);
 
 //	printk("pnum %lx, PAGE_PER_SECTION %lx, multipled %lx\n", pnum, PAGES_PER_SECTION, pnum*PAGES_PER_SECTION);
-	printk("map ptr *%016lx, map start %016lx, end %016lx\n", map, start, end);
+	printk("map ptr *%016lx, map start %016lx, end %016lx, nid %d\n", map, start, end, nid);
 //
 	if (vmemmap_populate(start, end, nid)) //hustard should be return 1
 		return NULL;

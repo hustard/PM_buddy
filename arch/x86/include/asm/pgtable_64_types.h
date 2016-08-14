@@ -64,7 +64,7 @@ typedef struct { pteval_t pte; } pte_t;
 #define ESPFIX_BASE_ADDR (ESPFIX_PGD_ENTRY << PGDIR_SHIFT)
 #define EFI_VA_START	 ( -4 * (_AC(1, UL) << 30))
 #define EFI_VA_END	 (-68 * (_AC(1, UL) << 30))
-#define PMMETA_START	 _AC(0xffffeb0000000000, UL)
+#define PMLOG_START	 _AC(0xffffeb0000000000, UL)
 
 #define EARLY_DYNAMIC_PAGE_TABLES	64
 

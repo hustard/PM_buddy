@@ -55,6 +55,8 @@
 #include <asm/init.h>
 #include <asm/setup.h>
 
+#include <linux/pm-buddy.h>
+
 #include "mm_internal.h"
 
 static void ident_pmd_init(unsigned long pmd_flag, pmd_t *pmd_page,
@@ -652,6 +654,7 @@ void __init paging_init(void)
 	sparse_memory_present_with_active_regions(MAX_NUMNODES);
 	sparse_init();
 
+	pmbuddy_init();
 	/*
 	 * clear the default setting with node 0
 	 * note: don't use nodes_clear here, that is really clearing when

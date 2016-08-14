@@ -11,10 +11,30 @@
  */
 //#ifdef CONFIG_LOG_PM_ALLOC
 
-#define PMBUDDY_DEFAULT_JOURNAL_SIZE (4 << 24)
+//#define PMJOURNAL_SIZE 0x6400000UL
+#define PMJOURNAL_SIZE_SHIFT 27
+#define PMJOURNAL_SIZE (1UL << PMJOURNAL_SIZE_SHIFT)//128MB
 
-#define PMBUDDY_LOGENTRY_SIZE 16
-#define PMBUDDY_LESIZE_SHIFT 4
+#define PM_LESIZE_SHIFT 4
+#define PM_LESIZE (1UL << PM_LESIZE_SHIFT)//16
+
+#define PMLE_SHIFT (PAGE_SHIFT - PM_LESIZE_SHIFT) //12 - 4 = 8
+#define PMLE_PER_PAGE (1UL << PM_LESIZE_SHIFT) // 256
+
+#define NR_PMLE_SHIFT (PMJOURNAL_SIZE_SHIFT - PM_LESIZE_SHIFT)//27 - 4 = 23 
+#define NR_PMBUDDY_ENTRYS (1UL << NR_PMLE_SHIFT)// 8388608(0x800000)
+
+#define PMLE_PER_HUGEPAGE (HPAGE_SIZE / PM_LESIZE) //131072
+
+#define NR_PMLE_BLOCKS (PMJOURNAL_SIZE / HPAGE_SIZE)
+
+/* memmap is virtually contiguous.  */
+#define pmlemap ((struct pmlog_entry *)PMLOG_START)
+#define __idx_to_ple(idx)	(pmlemap + (idx))
+#define __ple_to_idx(ple)	(unsigned long)((ple) - pmlemap)
+
+#define idx_to_ple __idx_to_ple
+#define ple_to_idx __ple_to_idx
 
 struct pmlog_entry {
 	struct page *addr;
@@ -34,6 +54,8 @@ extern int pmbuddy_add_logentry(struct page *dest, int zone, int order, int migr
 extern int pmbuddy_del_logentry(struct page *dest);
 extern int pmbuddy_commit_alloc(struct page *dest);
 extern int pmbuddy_gc(struct pm_log *log_block);
+
+void pmbuddy_init(void);
 
 //#endif /* CONFIG_LOG_PM_ALLOC */
 #endif /* __PM_BUDDY_H */

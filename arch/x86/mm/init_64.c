@@ -654,7 +654,10 @@ void __init paging_init(void)
 	sparse_memory_present_with_active_regions(MAX_NUMNODES);
 	sparse_init();
 
+#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+	printk("hustard: PMBUDDY config enabled\n");
 	pmbuddy_init();
+#endif
 	/*
 	 * clear the default setting with node 0
 	 * note: don't use nodes_clear here, that is really clearing when

@@ -6,6 +6,11 @@
 #include <linux/pm-buddy.h>
 #include <linux/bootmem.h>
 #include <linux/slab.h>
+#include <linux/pfn.h>
+#include <linux/mm.h>
+#include <linux/gfp.h>
+#include <linux/spinlock.h>
+
 #include <asm/pgtable.h>
 #include <asm/pgalloc.h>
 
@@ -14,6 +19,8 @@ static void *pmlog_buf_end;
 static long __meminitdata addr_start, addr_end;
 static void __meminitdata *p_start, *p_end;
 static int __meminitdata node_start;
+
+struct pm_log *pmlog_sblock;
 
 void * __meminit pmlog_alloc_block(unsigned long size, int node)
 {
@@ -309,42 +316,120 @@ void __init pmbuddy_init(void){
 //	}
 
 	base_entry = (struct pmlog_entry *) entry_node[0];
-	printk("entry_node %016lx, entry_node[0] %016lx(%016lx)\n", entry_node, entry_node[0], *entry_node[0]);
+//	printk("entry_node %016lx, entry_node[0] %016lx(%016lx)\n", entry_node, entry_node[0], *entry_node[0]);
 	
 	for (lenum = 0; lenum < 10; lenum++) {
 		iter_entry = base_entry + lenum;
-		printk("inter entry %016lx(%016lx)\n", iter_entry, *iter_entry);
+//		printk("inter entry %016lx(%016lx)\n", iter_entry, *iter_entry);
 		if (!iter_entry)
 			panic("can not allocate pmbuddy %lu log entry\n", lenum);
 		else {
-			iter_entry->addr = 0xAAAAAAAA;
-			iter_entry->zone_num = 0xBBBBBBBB;
-			iter_entry->page_order = 0xCC;
-			iter_entry->commit = 0xDD;
+			iter_entry->addr = 0x0;
+			iter_entry->zone_num = 0x0;
+			iter_entry->page_order = 0x0;
+			iter_entry->migrate_type = 0x0;
+			iter_entry->commit = 0x0;
 		}
 	}
 
 //	pmlog_populate_print_last();
 	memblock_free_early(__pa(entry_node), size);
+
+	pmlog_sblock = PMLOG_SB_ADDR;
+	spin_lock_init(&pmlog_sblock->lock);
 }
 
 
 void pmbuddy_journal_init(struct pm_log *log_block){
 }
 
-int pmbuddy_add_logentry(struct page *dest, int zone, int order, int migratetype){
-	return 0;
+int pmbuddy_add_logentry(struct page *dest, unsigned long log_idx, int zone, int order, int migratetype){
+
+	struct pmlog_entry *log_entry;
+
+	log_entry = idx_to_ple(log_idx);
+	if (!log_entry) {
+		printk("can not allocate pmbuddy log area\n");
+		return -1;
+	}
+	if(!log_entry->commit) {
+		log_entry->addr = dest;
+		log_entry->zone_num = (u8)zone;
+		log_entry->page_order = (u8)order;
+		log_entry->migrate_type = (u8)migratetype;
+		log_entry->commit = 1;
+		
+		spin_lock(&pmlog_sblock->lock);
+		pmlog_sblock->nr_log++;
+		spin_unlock(&pmlog_sblock->lock);
+//		printk("pmbuddy: \tadd logentry %lu nr_log %ld \n", log_idx, pmlog_sblock->nr_log);
+	}
+	return 1;
 }
 
-int pmbuddy_del_logentry(struct page *dest){
-	return 0;
+int pmbuddy_del_logentry(unsigned long log_idx){
+
+	struct pmlog_entry *log_entry = idx_to_ple(log_idx);
+
+	if (!log_entry) {
+		printk("can not find log entry\n");
+		return -1;
+	}
+	
+//	printk("pm buddy: delete log entry %lu\n", log_idx);
+	log_entry->addr = 0x0;
+	log_entry->zone_num = 0x0;
+	log_entry->page_order = 0x0;
+	log_entry->migrate_type = 0x0;
+	
+	spin_lock(&pmlog_sblock->lock);
+	pmlog_sblock->nr_log--;
+	spin_unlock(&pmlog_sblock->lock);
+//	printk("pmbuddy: del logentry %lu nr_log %ld \n", log_idx, pmlog_sblock->nr_log);
+	//	if(pmlog_sblock->nr_log == 0)
+//		printk("hustard: pm log is empty\n");
+	
+	return 1;
 }
 
-int pmbuddy_commit_alloc(struct page *dest){
-	return 0;
+int pmbuddy_commit_log(struct page *dest){
+
+	struct pmlog_entry *log_entry;
+
+//	printk("pm buddy: commit log entry page addr %016lx\n", dest);
+	log_entry = idx_to_ple(page_to_pfn(dest));
+	if (!log_entry) {
+		printk("can not find log entry\n");
+		return -1;
+	}
+	if(log_entry->commit) {
+		log_entry->commit = 0;	
+		pmbuddy_del_logentry(ple_to_idx(log_entry));
+	}
+	return 1;
 }
 
-int pmbuddy_gc(struct pm_log *log_block){
-	return 0;
-}
+void pmbuddy_gc(void) {
+	
+	struct pmlog_entry *log_entry;
+	unsigned long idx;
+	struct page *target_pg;
 
+	for(idx = 0; idx < NR_PMBUDDY_ENTRYS - 1 ; idx++ ){
+		log_entry = idx_to_ple(idx);
+		if(log_entry->commit) {
+			log_entry->commit = 0;	
+			target_pg = (struct page *) log_entry->addr;
+			__free_pages(target_pg, log_entry->page_order);
+			pmbuddy_del_logentry(idx);
+		}
+		if(pmlog_sblock->nr_log == 0)
+			break;
+	}
+}
+EXPORT_SYMBOL(pmbuddy_gc);
+
+unsigned long pmbuddy_nr_ples(void){
+	return pmlog_sblock->nr_log;
+}
+EXPORT_SYMBOL(pmbuddy_nr_ples);

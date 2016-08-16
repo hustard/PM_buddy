@@ -313,8 +313,8 @@ void __init sparse_mem_maps_populate_node(struct page **map_map,
 			continue;
 
 		map_map[pnum] = sparse_mem_map_populate(pnum, nodeid);
-		printk("pnum %ld map_map[pnum]* %016lx, map_map[pnum] %016lx\n\n",
-				pnum, &map_map[pnum], map_map[pnum]);
+//		printk("pnum %ld map_map[pnum]* %016lx, map_map[pnum] %016lx\n\n",
+//				pnum, &map_map[pnum], map_map[pnum]);
 		if (map_map[pnum])
 			continue;
 		ms = __nr_to_section(pnum);

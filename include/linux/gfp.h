@@ -7,6 +7,8 @@
 #include <linux/linkage.h>
 #include <linux/topology.h>
 
+#include <linux/pm-buddy.h>
+
 struct vm_area_struct;
 
 /* Plain integer GFP bitmasks. Do not use this directly. */
@@ -491,7 +493,18 @@ static inline struct page *
 __alloc_pages(gfp_t gfp_mask, unsigned int order,
 		struct zonelist *zonelist)
 {
+//#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+//	struct page* page;
+//
+//	page = __alloc_pages_nodemask(gfp_mask, order, zonelist, NULL);
+//	if(gfp_zone(gfp_mask) == ZONE_PMONLY) {
+//		pmbuddy_commit_log(page); 
+//	}
+//	return page;
+//#else
 	return __alloc_pages_nodemask(gfp_mask, order, zonelist, NULL);
+//#endif
+
 }
 
 /*
@@ -527,7 +540,17 @@ extern struct page *alloc_pages_current(gfp_t gfp_mask, unsigned order);
 static inline struct page *
 alloc_pages(gfp_t gfp_mask, unsigned int order)
 {
+//#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+//	struct page* page;
+//
+//	page = alloc_pages_current(gfp_mask, order);
+//	if(gfp_zone(gfp_mask) == ZONE_PMONLY) {
+//		pmbuddy_commit_log(page); 
+//	}
+//	return page;
+//#else
 	return alloc_pages_current(gfp_mask, order);
+//#endif
 }
 extern struct page *alloc_pages_vma(gfp_t gfp_mask, int order,
 			struct vm_area_struct *vma, unsigned long addr,

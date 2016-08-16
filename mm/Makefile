@@ -20,7 +20,7 @@ obj-y			:= filemap.o mempool.o oom_kill.o \
 			   util.o mmzone.o vmstat.o backing-dev.o \
 			   mm_init.o mmu_context.o percpu.o slab_common.o \
 			   compaction.o vmacache.o \
-			   interval_tree.o list_lru.o workingset.o pm_page_alloc.o\
+			   interval_tree.o list_lru.o workingset.o \
 			   debug.o $(mmu-y)
 
 obj-y += init-mm.o
@@ -81,3 +81,4 @@ obj-$(CONFIG_CMA_DEBUGFS) += cma_debug.o
 obj-$(CONFIG_USERFAULTFD) += userfaultfd.o
 obj-$(CONFIG_IDLE_PAGE_TRACKING) += page_idle.o
 obj-$(CONFIG_FRAME_VECTOR) += frame_vector.o
+obj-$(CONFIG_PMBUDDY_ALLOC_LOG) += pm_page_alloc.o

@@ -2090,6 +2090,11 @@ retry_cpuset:
 	if (unlikely(!page && read_mems_allowed_retry(cpuset_mems_cookie)))
 		goto retry_cpuset;
 
+//#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+//	if(gfp_zone(gfp) == ZONE_PMONLY) {
+//		pmbuddy_commit_log(page); 
+//	}
+//#endif
 	return page;
 }
 EXPORT_SYMBOL(alloc_pages_current);

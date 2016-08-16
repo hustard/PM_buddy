@@ -413,6 +413,11 @@ config BLK_DEV_PRAMDISK_DAX
 	depends on BLK_DEV_PRAMDISK && FS_DAX
 	default n
 
+config PMBUDDY_ALLOC_LOG
+	bool "Support Persistent Memory allocation log"
+	depends on FS_DAX
+	default n
+
 config CDROM_PKTCDVD
 	tristate "Packet writing on CD/DVD media"
 	depends on !UML

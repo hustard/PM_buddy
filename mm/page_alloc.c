@@ -64,6 +64,8 @@
 #include <linux/page_owner.h>
 #include <linux/kthread.h>
 
+#include <linux/pm-buddy.h>
+
 #include <asm/sections.h>
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
@@ -1531,6 +1533,12 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 	struct page *page, *pmigrate_page;
 	struct zone *pmigrate_zone;
 
+#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+	u32 zone_num;
+	u8 migrate_type;
+	u8 log_order;
+#endif 
+
 	max_area = &(zone->free_area[MAX_ORDER - 1]);
 
 	/* Find a page of the appropriate size in the preferred list */
@@ -1613,6 +1621,16 @@ struct page *__rmqueue_smallest(struct zone *zone, unsigned int order,
 //		if(page_zonenum(page) == 5)
 //			printk("pmonly page alloc migratetype %d, order %d\n", migratetype, page_private(page));
 
+#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+		zone_num = page_zonenum(page);
+		if(zone_num == ZONE_PMONLY) {
+			log_order = page_private(page);
+			migrate_type = migratetype;
+//			printk("hustard: PM Buddy log add idx: %d, order %d, zone_num %d, mtype %d\n",
+//					page_to_pfn(page), log_order, zone_num, migrate_type);
+			pmbuddy_add_logentry(page, page_to_pfn(page), zone_num, log_order, migrate_type); 
+		}
+#endif
 		return page;
 	}
 	return NULL;
@@ -2002,6 +2020,7 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 	int i;
 
 	spin_lock(&zone->lock);
+
 	for (i = 0; i < count; ++i) {
 		struct page *page = __rmqueue(zone, order, migratetype);
 		if (unlikely(page == NULL))
@@ -2167,6 +2186,7 @@ void drain_all_pages(struct zone *zone)
 	on_each_cpu_mask(&cpus_with_pcps, (smp_call_func_t) drain_local_pages,
 								zone, 1);
 }
+EXPORT_SYMBOL(drain_all_pages);
 
 #ifdef CONFIG_HIBERNATION
 
@@ -3373,7 +3393,7 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
 	struct zoneref *preferred_zoneref;
 	struct page *page = NULL;
 	unsigned int cpuset_mems_cookie;
-	
+
 	//int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET;
 	int alloc_flags = ALLOC_WMARK_LOW|ALLOC_CPUSET|ALLOC_FAIR;
 	gfp_t alloc_mask; /* The gfp_t that was actually used for allocation */
@@ -3460,6 +3480,11 @@ out:
 	if (unlikely(!page && read_mems_allowed_retry(cpuset_mems_cookie)))
 		goto retry_cpuset;
 
+#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+	if(gfp_zone(gfp_mask) == ZONE_PMONLY) {
+		pmbuddy_commit_log(page); 
+	}
+#endif
 	return page;
 }
 EXPORT_SYMBOL(__alloc_pages_nodemask);
@@ -3622,7 +3647,7 @@ EXPORT_SYMBOL(__free_page_frag);
 struct page *alloc_kmem_pages(gfp_t gfp_mask, unsigned int order)
 {
 	struct page *page;
-
+	
 	page = alloc_pages(gfp_mask, order);
 	if (page && memcg_kmem_charge(page, gfp_mask, order) != 0) {
 		__free_pages(page, order);

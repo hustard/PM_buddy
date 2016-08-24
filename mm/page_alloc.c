@@ -2021,8 +2021,16 @@ static int rmqueue_bulk(struct zone *zone, unsigned int order,
 
 	spin_lock(&zone->lock);
 
+//	if(zone_idx(zone) == ZONE_PMONLY)
+//		printk("hustard %s, count: %lu\n", __func__, count);
+
 	for (i = 0; i < count; ++i) {
 		struct page *page = __rmqueue(zone, order, migratetype);
+#ifdef CONFIG_PMBUDDY_ALLOC_LOG
+		if(zone_idx(zone) == ZONE_PMONLY) {
+			pmbuddy_commit_log(page); 
+		}
+#endif
 		if (unlikely(page == NULL))
 			break;
 

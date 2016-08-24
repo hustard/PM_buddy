@@ -51,6 +51,13 @@ ENTRY(memcpy_erms)
 	ret
 ENDPROC(memcpy_erms)
 
+ENTRY(pmemcpy)
+	movq %rdi, %rax
+	movq %rdx, %rcx
+	rep movsb
+	ret
+ENDPROC(pmemcpy)
+
 ENTRY(memcpy_orig)
 	movq %rdi, %rax
 

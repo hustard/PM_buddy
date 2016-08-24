@@ -24,6 +24,7 @@
 #endif
 
 #include <asm/uaccess.h>
+#include <asm/fpu/api.h>
 
 #define SECTOR_SHIFT		9
 #define PAGE_SECTORS_SHIFT	(PAGE_SHIFT - SECTOR_SHIFT)
@@ -235,6 +236,97 @@ static void discard_from_pbrd(struct pbrd_device *pbrd,
 	}
 }
 
+static void *nt_memcpy(void *to, const void *from, size_t len)
+{
+	void *p;
+	int i;
+
+	if (unlikely(in_interrupt()))
+		return __memcpy(to, from, len);
+
+	p = to;
+	i = len >> 6; /* len/64 */
+
+	kernel_fpu_begin();
+
+	__asm__ __volatile__ (
+		"1: prefetch (%0)\n"		/* This set is 28 bytes */
+		"   prefetch 64(%0)\n"
+		"   prefetch 128(%0)\n"
+		"   prefetch 192(%0)\n"
+		"   prefetch 256(%0)\n"
+		"2:  \n"
+		".section .fixup, \"ax\"\n"
+		"3: movw $0x1AEB, 1b\n"	/* jmp on 26 bytes */
+		"   jmp 2b\n"
+		".previous\n"
+			_ASM_EXTABLE(1b, 3b)
+			: : "r" (from));
+
+	for ( ; i > 5; i--) {
+		__asm__ __volatile__ (
+		"1:  prefetch 320(%0)\n"
+		"2:  movq (%0), %%mm0\n"
+		"  movntq %%mm0, (%1)\n"
+		"  movq 8(%0), %%mm1\n"
+		"  movntq %%mm1, 8(%1)\n"
+		"  movq 16(%0), %%mm2\n"
+		"  movntq %%mm2, 16(%1)\n"
+		"  movq 24(%0), %%mm3\n"
+		"  movntq %%mm3, 24(%1)\n"
+		"  movq 32(%0), %%mm0\n"
+		"  movntq %%mm0, 32(%1)\n"
+		"  movq 40(%0), %%mm1\n"
+		"  movntq %%mm1, 40(%1)\n"
+		"  movq 48(%0), %%mm2\n"
+		"  movntq %%mm2, 48(%1)\n"
+		"  movq 56(%0), %%mm3\n"
+		"  movntq %%mm3, 56(%1)\n"
+		".section .fixup, \"ax\"\n"
+		"3: movw $0x05EB, 1b\n"	/* jmp on 5 bytes */
+		"   jmp 2b\n"
+		".previous\n"
+			_ASM_EXTABLE(1b, 3b)
+			: : "r" (from), "r" (to) : "memory");
+
+		from += 64;
+		to += 64;
+	}
+
+	for ( ; i > 0; i--) {
+		__asm__ __volatile__ (
+		"  movq (%0), %%mm0\n"
+		"  movntq %%mm0, (%1)\n"
+		"  movq 8(%0), %%mm1\n"
+		"  movntq %%mm1, 8(%1)\n"
+		"  movq 16(%0), %%mm2\n"
+		"  movntq %%mm2, 16(%1)\n"
+		"  movq 24(%0), %%mm3\n"
+		"  movntq %%mm3, 24(%1)\n"
+		"  movq 32(%0), %%mm0\n"
+		"  movntq %%mm0, 32(%1)\n"
+		"  movq 40(%0), %%mm1\n"
+		"  movntq %%mm1, 40(%1)\n"
+		"  movq 48(%0), %%mm2\n"
+		"  movntq %%mm2, 48(%1)\n"
+		"  movq 56(%0), %%mm3\n"
+		"  movntq %%mm3, 56(%1)\n"
+			: : "r" (from), "r" (to) : "memory");
+
+		from += 64;
+		to += 64;
+	}
+	/*
+	 * Now do the tail of the block:
+	 */
+	__memcpy(to, from, len & 63);
+	__asm__ __volatile__("sfence \n"::);
+	kernel_fpu_end();
+
+	return p;
+}
+EXPORT_SYMBOL(nt_memcpy);
+
 /*
  * Copy n bytes from src to the pbrd starting at sector. Does not sleep.
  */
@@ -252,6 +344,8 @@ static void copy_to_pbrd(struct pbrd_device *pbrd, const void *src,
 
 	dst = kmap_atomic(page);
 	memcpy(dst + offset, src, copy);
+	//pmemcpy(dst + offset, src, copy);
+	//nt_memcpy(dst + offset, src, copy);
 	kunmap_atomic(dst);
 
 	if (copy < n) {
@@ -263,6 +357,7 @@ static void copy_to_pbrd(struct pbrd_device *pbrd, const void *src,
 
 		dst = kmap_atomic(page);
 		memcpy(dst, src, copy);
+		//nt_memcpy(dst, src, copy);
 		kunmap_atomic(dst);
 	}
 }

@@ -28,6 +28,7 @@ static __always_inline void *__inline_memcpy(void *to, const void *from, size_t 
 
 #define __HAVE_ARCH_MEMCPY 1
 extern void *memcpy(void *to, const void *from, size_t len);
+extern void *pmemcpy(void *to, const void *from, size_t len);
 extern void *__memcpy(void *to, const void *from, size_t len);
 
 #ifndef CONFIG_KMEMCHECK

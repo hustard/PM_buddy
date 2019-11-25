@@ -39,35 +39,6 @@ struct vm_area_struct;
 #define ___GFP_PMONLY	0x4000000u
 /* If the above are modified, __GFP_BITS_SHIFT may need updating */
 
-//hustard
-//#define ___GFP_DMA		0x01u
-//#define ___GFP_HIGHMEM		0x02u
-//#define ___GFP_DMA32		0x04u
-//#define ___GFP_PMONLY		0x08u
-//#define ___GFP_MOVABLE		0x10u
-//#define ___GFP_RECLAIMABLE	0x20u
-//#define ___GFP_HIGH		0x40u
-//#define ___GFP_IO		0x80u
-//#define ___GFP_FS		0x100u
-//#define ___GFP_COLD		0x200u
-//#define ___GFP_NOWARN		0x400u
-//#define ___GFP_REPEAT		0x800u
-//#define ___GFP_NOFAIL		0x1000u
-//#define ___GFP_NORETRY		0x2000u
-//#define ___GFP_MEMALLOC		0x4000u
-//#define ___GFP_COMP		0x8000u
-//#define ___GFP_ZERO		0x10000u
-//#define ___GFP_NOMEMALLOC	0x20000u
-//#define ___GFP_HARDWALL		0x40000u
-//#define ___GFP_THISNODE		0x80000u
-//#define ___GFP_ATOMIC		0x100000u
-//#define ___GFP_ACCOUNT		0x200000u
-//#define ___GFP_NOTRACK		0x400000u
-//#define ___GFP_DIRECT_RECLAIM	0x800000u
-//#define ___GFP_OTHER_NODE	0x1000000u
-//#define ___GFP_WRITE		0x2000000u
-//#define ___GFP_KSWAPD_RECLAIM	0x4000000u
-
 /*
  * Physical address zone modifiers (see linux/mmzone.h - low four bits)
  *
@@ -80,8 +51,7 @@ struct vm_area_struct;
 #define __GFP_DMA32	((__force gfp_t)___GFP_DMA32)
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* Page is movable */
 #define __GFP_MOVABLE	((__force gfp_t)___GFP_MOVABLE)  /* ZONE_MOVABLE allowed */
-#define __GFP_PMONLY	((__force gfp_t)___GFP_PMONLY)  /* hustard */
-//#define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_MOVABLE)
+#define __GFP_PMONLY	((__force gfp_t)___GFP_PMONLY)
 #define GFP_ZONEMASK	(__GFP_DMA|__GFP_HIGHMEM|__GFP_DMA32|__GFP_PMONLY|__GFP_MOVABLE)
 
 /*
@@ -421,27 +391,12 @@ static inline enum zone_type gfp_zone(gfp_t flags)
 {
 	enum zone_type z;
 	int bit = (__force int) (flags & GFP_ZONEMASK);
-	//hustard: lowest 4bit store to bit variable
 
 	z = (GFP_ZONE_TABLE >> (bit * ZONES_TABLE_SHIFT)) &
 					 ((1 << ZONES_TABLE_SHIFT) - 1); 
-//	if(!(bit == 0xa || bit == 0x0 || bit == 0x2 || bit == 0x8))
-//		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
-//	else if(z == 5)
-//		printk("flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
-	// z = ---- & 011
-
 	if(bit & __GFP_PMONLY){
 		z = 5;
-//		printk("gfp_flags %x\n",bit);
 	}
-
-//	if(bit & __GFP_PMONLY)	
-//		printk("pmonly flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
-//	else if(z == 2)
-//		printk("z==2 flags %lx, GFP_ZONE_TABLE %x, bit %x, z %x\n",(unsigned long)flags, GFP_ZONE_TABLE, bit, z);
-//		z = 4;
-
 	VM_BUG_ON((GFP_ZONE_BAD >> bit) & 1);
 	return z;
 }

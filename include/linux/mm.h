@@ -627,7 +627,6 @@ void do_set_pte(struct vm_area_struct *vma, unsigned long address,
 #define NODES_PGOFF		(SECTIONS_PGOFF - NODES_WIDTH)
 #define ZONES_PGOFF		(NODES_PGOFF - ZONES_WIDTH)
 #define LAST_CPUPID_PGOFF	(ZONES_PGOFF - LAST_CPUPID_WIDTH)
-//hustard | section:58 | node:58 | ZONE:56 | CPUPID:56 | .... | flags:22? | 
 
 /*
  * Define the bit shifts to access each section.  For non-existent
@@ -900,7 +899,6 @@ static inline void set_page_links(struct page *page, enum zone_type zone,
 #endif
 }
 
-//hustard
 static inline void add_page_zone(struct page *page, enum zone_type zone)
 {
 	page->flags |= (zone & ZONES_MASK) << ZONES_PGSHIFT;

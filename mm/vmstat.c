@@ -914,12 +914,8 @@ static void walk_zones_in_node(struct seq_file *m, pg_data_t *pgdat,
 
 	for (zone = node_zones; zone - node_zones < MAX_NR_ZONES; ++zone) {
 		if (!populated_zone(zone)){
-		//	printk("!populated_zone\n");
 			continue;
 		}
-		//hustard
-//		printk("zone - node_zones value %d < MAX_NR_ZONES %d\n", zone-node_zones, MAX_NR_ZONES);
-
 		spin_lock_irqsave(&zone->lock, flags);
 		print(m, pgdat, zone);
 		spin_unlock_irqrestore(&zone->lock, flags);
@@ -950,23 +946,6 @@ static void frag_show_print(struct seq_file *m, pg_data_t *pgdat,
 	for (order = 0; order < MAX_ORDER; ++order)
 		seq_printf(m, "%6lu ", zone->free_area[order].nr_free);
 	seq_putc(m, '\n');
-
-	//hustard
-//	printk("section width %d, shift %d\nnode width %d, shift %d\nzone width %d, shift %d\nlast_cpuid width %d, shift %d\n",
-//			SECTIONS_WIDTH, SECTIONS_SHIFT,
-//			NODES_WIDTH, NODES_SHIFT,
-//			ZONES_WIDTH, ZONES_SHIFT,
-//			LAST_CPUPID_WIDTH, LAST_CPUPID_SHIFT);
-//	printk("section_SIZE_BITS %d, max_phyaddr_BITS %d max_phymem_bits %d\n",
-//			SECTION_SIZE_BITS, MAX_PHYSADDR_BITS, MAX_PHYSMEM_BITS);
-//	printk("section_pgoff %d, section_pgshift %d nodes_pgoff %d nodes_pgshift %d\n",
-//			SECTIONS_PGOFF, SECTIONS_PGSHIFT, NODES_PGOFF, NODES_PGSHIFT);
-//	printk("zones_pgoff %d, zones_pgshift %d lastcpuid_pgoff %d pastcpuid_pgshift %d\n",
-//			ZONES_PGOFF, ZONES_PGSHIFT, LAST_CPUPID_PGOFF, LAST_CPUPID_PGSHIFT);
-//	printk("BITS_PER_LONG %d, BITS_PER_LONG_LONG %d\n",
-//			BITS_PER_LONG, BITS_PER_LONG_LONG);
-
-//	printk("GFP_ZONE_TABLE %llx\n",GFP_ZONE_TABLE);
 }
 
 /*
@@ -1234,7 +1213,8 @@ static void zoneinfo_show_print(struct seq_file *m, pg_data_t *pgdat,
 	int i;
 	seq_printf(m, "Node %d, zone %8s", pgdat->node_id, zone->name);
 	seq_printf(m,
-		   "\n  pages free     %lu"
+		   /** "\n  pages free     %lu" */
+		   "\n  free   %lu MB"
 		   "\n        min      %lu"
 		   "\n        low      %lu"
 		   "\n        high     %lu"
@@ -1242,6 +1222,7 @@ static void zoneinfo_show_print(struct seq_file *m, pg_data_t *pgdat,
 		   "\n        spanned  %lu"
 		   "\n        present  %lu"
 		   "\n        managed  %lu",
+		   zone_page_state(zone, NR_FREE_PAGES) * 4 / 1024,
 		   zone_page_state(zone, NR_FREE_PAGES),
 		   min_wmark_pages(zone),
 		   low_wmark_pages(zone),

@@ -1321,10 +1321,7 @@ done:
 	memblock_reserve(alloc, size);
 	ptr = phys_to_virt(alloc);
 	memset(ptr, 0, size);
-
-	printk("hustard: %llu bytes align=0x%llx nid=%d from=0x%llx max_addr=0x%llx, alloc=0x%llx, ptr=0x%llx\n",
-		     (u64)size, (u64)align, nid, (u64)min_addr, (u64)max_addr, alloc, ptr);
-
+	
 	/*
 	 * The min_count is set to 0 so that bootmem allocated blocks
 	 * are never reported as leaks. This is because many of these blocks

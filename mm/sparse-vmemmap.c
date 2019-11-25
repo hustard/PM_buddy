@@ -258,13 +258,8 @@ struct page * __meminit sparse_mem_map_populate(unsigned long pnum, int nid)
 	start = (unsigned long)map;
 	end = (unsigned long)(map + PAGES_PER_SECTION);
 
-//	printk("pnum %lx, PAGE_PER_SECTION %lx, multipled %lx\n", pnum, PAGES_PER_SECTION, pnum*PAGES_PER_SECTION);
-//	printk("map ptr %lx, map end %lx, pa %lx, virt_to_phys %lx\n", map, end, __pa(map), virt_to_phys(map));
-//
 	if (vmemmap_populate(start, end, nid))
 		return NULL;
-
-//	printk("start ptr %lx, pa %lx, virt_to_phys %lx\n", start, __pa(start), virt_to_phys(start));
 	return map;
 }
 
@@ -280,12 +275,8 @@ void __init sparse_mem_maps_populate_node(struct page **map_map,
 	size = ALIGN(size, PMD_SIZE);
 	vmemmap_buf_start = __earlyonly_bootmem_alloc(nodeid, size * map_count,
 			 PMD_SIZE, __pa(MAX_DMA_ADDRESS));
-//			 PMD_SIZE, __pa(MAX_PMMIGRATE_ADDRESS));
 
-	//hustard
-//	printk("vmemmap_buf_start %lx, %lx\n", MAX_DMA_ADDRESS, __pa(MAX_DMA_ADDRESS));
 	printk("vmemmap_buf_start %lx, %lx\n", MAX_PMMIGRATE_ADDRESS, __pa(MAX_PMMIGRATE_ADDRESS));
-	//hustard
 	printk("bootmem ptr %lx, pa %lx, virt_to_phys %lx\n", vmemmap_buf_start, __pa(vmemmap_buf_start), virt_to_phys(vmemmap_buf_start));
 	printk("size * map_count %llx\n", size*map_count);
 	printk("PAGES_PER_SECTION %llx, bootmem_alloc_accessible %lx\n", PAGES_PER_SECTION, BOOTMEM_ALLOC_ACCESSIBLE);

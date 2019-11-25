@@ -105,8 +105,6 @@ static struct page *pbrd_insert_page(struct pbrd_device *pbrd, sector_t sector)
 	 * If DAX was reworked to use pfns and kmap throughout, this
 	 * restriction might be able to be lifted.
 	 */
-	//hustard
-//	gfp_flags = GFP_NOIO | __GFP_ZERO;
 	gfp_flags = GFP_NOIO | __GFP_ZERO | __GFP_PMONLY;
 #ifndef CONFIG_BLK_DEV_PRAMDISK_DAX
 	gfp_flags |= __GFP_HIGHMEM;

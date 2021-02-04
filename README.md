@@ -1,2 +1,2 @@
-# hustard_puddy
-in progress
+# PM_buddy
+Closed project
